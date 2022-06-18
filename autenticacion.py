@@ -1,8 +1,7 @@
 import tekore as tk
 import requests
-import base64
 
-def main() -> None:
+def autenticar() -> str:
     """ Spotify """
     id_cliente: str = "176365611325455e8059fbd545371d89"
     usuario: str = "3165tas3s4za67w2jmbzq4kgr2b4"
@@ -19,20 +18,18 @@ def main() -> None:
             }
         ))
 
-    print(autorizacion)
-    
     if (autorizacion.status_code == 200): # Si obtengo el código 200 es porque está todo OK.
         
         # Genero un token de autenticación. Lo usaré cada vez que haga una petición.
         token_acceso: str = tk.request_client_token(id_cliente, key_secreta)
-        print(token_acceso)
 
-        # Hago una petición. Ej: deseo conocer todas las canciones de una playlist.
-        resultado: object = requests.get(uri_solicitud+"playlists/"+"0VRmNHCCKwXtLG9gvzg2uk?si=54ed5ae222c1459c", headers={
+        """ # Hago una petición. Ej: deseo conocer todas las canciones de una playlist.
+        resultado: object = requests.get(uri_solicitud+"playlists/"+"0VRmNHCCKwXtLG9gvzg2uk", headers={
             "Authorization": "Bearer {token}".format(token=token_acceso)}
             )
-        print(resultado.json())
-        
+        print(resultado) """
 
-main()
+    return token_acceso
+
+print(autenticar())
 
