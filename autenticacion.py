@@ -1,34 +1,38 @@
-
 import tekore as tk
 import requests
+import base64
 
 def main() -> None:
+    """ Spotify """
     id_cliente: str = "176365611325455e8059fbd545371d89"
     usuario: str = "3165tas3s4za67w2jmbzq4kgr2b4"
     key_secreta: str = "ed35a90b681042f4bbad9f284383c88a"
-    url_autenticacion: str = "https://accounts.spotify.com/authorize/"
+    url_autorizacion: str = "https://accounts.spotify.com/authorize"
+    url_autenticacion: str = "https://accounts.spotify.com/api/token"
     uri_redireccion: str = "https://open.spotify.com/"
+    uri_solicitud: str = "https://api.spotify.com/v1/"
 
-    autorizacion: int = (requests.get(url_autenticacion, {
+    autorizacion: object = (requests.get(url_autorizacion, {
             "client_id": id_cliente,
             "response_type": "code",
             "redirect_uri": uri_redireccion
             }
-        )).status_code
+        ))
+
+    print(autorizacion)
     
-    if (autorizacion == 200): # Si obtengo el código 200 es porque está todo OK.
-
-        # Genero un token para intercambiar en la autenticación de acceso.
-        token: tk.Token = tk.request_client_token(id_cliente, key_secreta)
+    if (autorizacion.status_code == 200): # Si obtengo el código 200 es porque está todo OK.
         
-        spotify: object = tk.Spotify(token)
+        # Genero un token de autenticación. Lo usaré cada vez que haga una petición.
+        token_acceso: str = tk.request_client_token(id_cliente, key_secreta)
+        print(token_acceso)
 
-        # Consumo un servicio.
-        item: object = spotify.playlist("0VRmNHCCKwXtLG9gvzg2uk?si=54ed5ae222c1459c").tracks.items[0].track
-        # Formateo e imprimo por pantalla.
-        cancion: str = item.name
-        interprete: str = item.artists[0].name
-        print(cancion, "-", interprete)
+        # Hago una petición. Ej: deseo conocer todas las canciones de una playlist.
+        resultado: object = requests.get(uri_solicitud+"playlists/"+"0VRmNHCCKwXtLG9gvzg2uk?si=54ed5ae222c1459c", headers={
+            "Authorization": "Bearer {token}".format(token=token_acceso)}
+            )
+        print(resultado.json())
+        
 
 main()
 
