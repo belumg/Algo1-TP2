@@ -1,4 +1,4 @@
-CENTRADO :int = 60
+LONGITUD = 45
 
 LOGO_INICIO :str = """
     ╔════════════════════════════════════════════════════════════╗
@@ -19,9 +19,10 @@ LOGO_INICIO :str = """
 """
 
 def inicio() -> None:
+    """Imprime el logo del software."""
     print(LOGO_INICIO)
     input("         Presione Enter para continuar: ")
-    print() 
+    print()
 
 MENU :str = """
                 ██████████████████████████████
@@ -48,4 +49,51 @@ MENU :str = """
           [8] Salir
 
          ╚══════════════════════════════════════════╝  
+"""
+
+OPCION_NO_DISPONIBLE :str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+          [OPCION NO DISPONIBLE]
+
+       Primero debes autenticar un 
+       perfil en alguna plataforma
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+def youtube_spotify() -> None:
+    """Imprime un menu con 2 opciones (Youtube, Spotify)."""
+    print(f"""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+            Elegir plataforma:        
+
+        [1] Youtube 
+
+        [2] Spotify
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    """)
+
+def visual_nombres_playlists(lista_playlists:list, plataforma:str) -> None:
+    """
+    Pre: Recibe una lista no vacia junto con el nombre de la plataforma.
+    Post: Imprime los elementos de la lista en un menu que tiene el nombre ingresado.
+    """
+    maxima_long = len(sorted(lista_playlists, key=len, reverse=True)[0])
+    if maxima_long < LONGITUD: maxima_long = LONGITUD
+    print(f"┏━{'━'*maxima_long}━┓")
+    print(f" Playlists de {plataforma}".center(maxima_long))
+    print(f"┣━{'━'*maxima_long}━┫\n")
+    for playlist in lista_playlists:
+        print(f" - {playlist}\n")
+    print(f"┗━{'━'*maxima_long}━┛")
+    input(" Presione Enter para volver al menu: ")
+
+NO_PLAYLIST :str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+
+        No se encontraron playlists   
+         guardadas en esta cuenta.
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
