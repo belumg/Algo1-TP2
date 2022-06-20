@@ -1,6 +1,6 @@
 import tekore as tk
 import requests
-import visual as vis
+import TP2_VISUAL as vis
 
 ID_CLIENTE: str = "ea4916f2e2d144a992b0f2d7bed6c25d"
 CLIENTE_SECRETO: str = "e8efcd9f5ed541bda3a3b1653e1fc5e4"
