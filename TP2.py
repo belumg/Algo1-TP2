@@ -22,14 +22,19 @@ def opciones(numeros_permitidos :list) -> int:
         else: print("   Ingrese un numero.")
     return int(opcion)
 
-def auntenticar_spotify():
-    token_usuario = tk.prompt_for_user_token(
-        ID_CLIENTE,
-        CLIENTE_SECRETO,
-        URI_REDIRECCION,
-        SCOPE
-    )
-    return token_usuario
+def auntenticar_spotify(datos_importantes) -> None:
+    try:
+        token_usuario = tk.prompt_for_user_token(
+            ID_CLIENTE,
+            CLIENTE_SECRETO,
+            URI_REDIRECCION,
+            SCOPE
+        )
+    except KeyError:
+        print("No ingresaste bien la URL")
+        print("Intenta otra vez.")
+    else:
+        datos_importantes[1] = token_usuario
 
 def auntenticar_perfil(datos_importantes) -> None:
     vis.youtube_spotify()
@@ -37,8 +42,7 @@ def auntenticar_perfil(datos_importantes) -> None:
     if opcion == 1:
         pass
     else:
-        token_usuario = auntenticar_spotify()
-        datos_importantes[1] = token_usuario
+        auntenticar_spotify(datos_importantes)
 
 def playlists_spotify(datos_importantes) -> None:
     headers = {
