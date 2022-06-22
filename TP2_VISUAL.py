@@ -24,6 +24,65 @@ def inicio() -> None:
     input("         Presione Enter para continuar: ")
     print()
 
+MENU_PERFILES = """
+                ██████████████████████████████
+                █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
+                ██─█▄█─███─▄█▀██─█▄▀─███─██─██
+                ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
+
+         ╔══════════════════════════════════════════╗
+
+          [1] Seleccionar perfil guardado.
+
+          [2] Ingresar perfil.
+
+         ╚══════════════════════════════════════════╝
+"""
+
+INSTRUCCIONES :str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+              [INSTRUCCIONES]
+
+     - Logearse (si es necesario).
+     - Aceptar los permisos.
+     - Copiar nueva URL.
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+"""
+
+DATOS_GUARDADOS :str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+      [DATOS GUARDADOS EXITOSAMENTE]
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+def youtube_spotify() -> None:
+    """Imprime un menu con 2 opciones (Youtube, Spotify)."""
+    print(f"""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+            Elegir plataforma:        
+
+        [1] Youtube 
+
+        [2] Spotify
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    """)
+
+ERROR_URL :str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+             [URL INCORRECTA]
+
+      Posibles causas:
+        - Mal ingreso de datos.
+        - No acepto los permisos.
+        - Copio mal la URL. 
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+
 MENU :str = """
                 ██████████████████████████████
                 █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
@@ -60,19 +119,6 @@ OPCION_NO_DISPONIBLE :str = """
 
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
-
-def youtube_spotify() -> None:
-    """Imprime un menu con 2 opciones (Youtube, Spotify)."""
-    print(f"""
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-            Elegir plataforma:        
-
-        [1] Youtube 
-
-        [2] Spotify
-
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    """)
 
 def visual_nombres_playlists(lista_playlists:list, plataforma:str) -> None:
     """
