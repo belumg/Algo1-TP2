@@ -60,7 +60,7 @@ def importar_playlist(token, playlist_id:str, servidor:str, info_playlist:dict, 
         pass
 
 
-def exportar_dict_a_archivo(extension:str, usuario:str, mi_dict:dict, nombre:str) -> None:
+def exportar_dict_a_cvs(extension:str, usuario:str, mi_dict:dict, nombre:str) -> None:
     # Funciona para un solo dict, no nested dicts, y reescribe el archivo
     with open(f"{nombre}_{usuario}.{extension}", "w") as archivito:
         w = csv.DictWriter(archivito, mi_dict.keys())
