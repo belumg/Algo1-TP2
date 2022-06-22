@@ -143,3 +143,30 @@ NO_PLAYLIST :str = """
 
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
+
+def mostrar_cancion(cancion: dict, orden: int, titulo: str = "") -> None:
+    print(f"""     {titulo}
+        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+
+         Cod. {orden}
+         {cancion['name']}
+         Artistas: {','.join(cancion['artists'])}
+         Album: {cancion['album']}
+
+        ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+        """)
+
+
+def menu_con_opciones_cortas(titulo: str, opciones: list) -> None:
+    # sirve para cualquier menu de opciones, solo enviar titulo y lista de opciones
+    print(f"""     {titulo}
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+
+    """)
+    for i in range(len(opciones)):
+        print(f"     [{i + 1}]  {opciones[i]}")
+    print(f"""
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    """)
