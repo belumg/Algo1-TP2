@@ -1,11 +1,12 @@
 import tekore as tk
-import requests
+from webbrowser import open as web_open
 import TP2_VISUAL as vis
 
 ID_CLIENTE: str = "ea4916f2e2d144a992b0f2d7bed6c25d"
-CLIENTE_SECRETO: str = "e8efcd9f5ed541bda3a3b1653e1fc5e4"
 URI_REDIRECCION: str = "http://localhost:8888/callback"
 SCOPE = tk.scope.every
+tk.client_id_var = "USUARIO_ID"
+
 
 def opciones(numeros_permitidos :list) -> int:
     """
@@ -22,66 +23,58 @@ def opciones(numeros_permitidos :list) -> int:
         else: print("   Ingrese un numero.")
     return int(opcion)
 
-def auntenticar_spotify(datos_importantes) -> None:
-    try:
-        token_usuario = tk.prompt_for_user_token(
-            ID_CLIENTE,
-            CLIENTE_SECRETO,
-            URI_REDIRECCION,
-            SCOPE
-        )
-    except KeyError:
-        print("No ingresaste bien la URL")
-        print("Intenta otra vez.")
-    else:
-        datos_importantes[1] = token_usuario
+def datos_perfil_spotify(token) -> list:
+    """
+    Pre: Recibe un token de usuario (que aun no expiro) de Spotify.
+    Post: Devuelve una lista [id_usuario, nombre_usuario]
+    """
+    datos_perfil :list = []
+    spotify = tk.Spotify(token)
+    usuario = spotify.current_user()
+    datos_perfil.append(usuario.id)
+    datos_perfil.append(usuario.display_name)
+    return datos_perfil
 
-def auntenticar_perfil(datos_importantes) -> None:
+def guardar_nuevo_perfil(token, refresh_token) -> None:
+    datos_usuario :list = datos_perfil_spotify(token)
+    datos_guardar :tuple = (datos_usuario[0], None, None, refresh_token)
+    tk.config_to_file("cuentas_spotify.txt", datos_guardar, datos_usuario[1])
+    with open("nombres_spotify.txt", "a") as f:
+        f.write(datos_usuario[1]+"\n")
+    
+def nuevo_perfil_spotify() -> None:
+    credenciales :tk.Credentials = tk.Credentials(ID_CLIENTE, redirect_uri=URI_REDIRECCION)
+    url, verificador = credenciales.pkce_user_authorisation(SCOPE)
+    print(vis.INSTRUCCIONES)
+    input("Presione Enter para que se abra Spotify: ")
+    web_open(url)
+    print()
+    print("Aqui abajo debes ingresar la URL que copiaste:  ")
+    url :str = input("--->  ").strip()
+    codigo = tk.parse_code_from_url(url)
+    token_usuario = credenciales.request_pkce_token(codigo, verificador)
+    refresh_token = token_usuario.refresh_token
+    guardar_nuevo_perfil(token_usuario, refresh_token)
+    print(vis.DATOS_GUARDADOS)
+
+def nuevo_perfil():
     vis.youtube_spotify()
-    opcion :int = opciones([1, 2])
+    opcion :int = opciones([1,2])
     if opcion == 1:
         pass
     else:
-        auntenticar_spotify(datos_importantes)
+        nuevo_perfil_spotify()
 
-def playlists_spotify(datos_importantes) -> None:
-    headers = {
-    'Authorization': 'Bearer {token}'.format(token=datos_importantes[1]),
-    'Content-Type' : 'application/json'
-    }
-    playlist = (requests.get(url = "https://api.spotify.com/v1/me/playlists", headers=headers))
-    playlist = playlist.json()
-    nombres_playlist :list = [x["name"] for x in playlist["items"]]
-    if nombres_playlist:
-        vis.visual_nombres_playlists(nombres_playlist, "Spotify")
-    else:
-        print(vis.NO_PLAYLIST)
-        input(" Presione Enter para volver al menu: ")
-
-def playlists_actuales(datos_importantes):
-    vis.youtube_spotify()
-    opcion :int = opciones([1, 2])
+def manejo_perfiles():
+    print(vis.MENU_PERFILES)
+    opcion :int = opciones([1,2])
     if opcion == 1:
         pass
     else:
-        playlists_spotify(datos_importantes)
+        nuevo_perfil()
 
 def main() -> None:
     vis.inicio()
-    terminar :bool = False
-    datos_importantes :list = ["", ""]
-    while not terminar:
-        print(vis.MENU)
-        opcion :int = opciones(range(1,9))
-        if opcion == 1:
-            auntenticar_perfil(datos_importantes)
-            print(datos_importantes[1])
-        elif (opcion in range(2,8) and
-             (not datos_importantes[0] and not datos_importantes[1])):
-            print(vis.OPCION_NO_DISPONIBLE)
-        elif opcion == 2:
-            playlists_actuales(datos_importantes)
-        elif opcion == 8:
-            terminar :bool = True
-            
+    manejo_perfiles()
+
 main()
