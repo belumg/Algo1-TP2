@@ -112,19 +112,21 @@ def menu_opciones():
 
          ╔══════════════════════════════════════════╗
           
-          [1] Exportar playlist (CSV)
+          [1] Listar playlist
 
-          [2] Crear nueva playlist
+          [2] Exportar playlist (CSV)
 
-          [3] Buscar canciones
+          [3] Crear nueva playlist
 
-          [4] Sincronizar playlist
+          [4] Buscar canciones
 
-          [5] Analizar playlist
+          [5] Sincronizar playlist
 
-          [6] Cambiar de perfil
+          [6] Analizar playlist
 
-          [7] Salir
+          [7] Cambiar de perfil
+
+          [8] Salir
 
          ╚══════════════════════════════════════════╝        
     """)
