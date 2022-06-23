@@ -60,7 +60,7 @@ def al_wordcloud(letra: str)->None:
 
 def wordcloud() -> None:
     token = autenticar()
-    usuario = "314cczzfziqk2kqf37hj74qp4r7q"
+ 
     token_genius= ingreso_genius()
     letra: str = extraer_letra(token_genius)
     #idioma(letra)
