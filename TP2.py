@@ -5,17 +5,15 @@ import TP2_VISUAL as vis
 ID_CLIENTE: str = "ea4916f2e2d144a992b0f2d7bed6c25d"
 URI_REDIRECCION: str = "http://localhost:8888/callback"
 SCOPE = tk.scope.every
-tk.client_id_var = "USUARIO_ID"
-
 
 def opciones(numeros_permitidos :list) -> int:
     """
     Pre: Recibe una lista con los posibles numeros que puede tomar nuestra opcion.
     Post: Devuelve un entero que sigue los limites marcados.
     """
-    opcion_correcta :bool = False
+    opcion_correcta: bool = False
     while not opcion_correcta:
-        opcion :str = input("Ingrese una opcion: ")
+        opcion: str = input("Ingrese una opcion: ")
         if opcion.isnumeric():
             if int(opcion) in numeros_permitidos:
                 opcion_correcta :bool = True
@@ -23,26 +21,12 @@ def opciones(numeros_permitidos :list) -> int:
         else: print("   Ingrese un numero.")
     return int(opcion)
 
-def datos_perfil_spotify(token) -> list:
-    """
-    Pre: Recibe un token de usuario (que aun no expiro) de Spotify.
-    Post: Devuelve una lista [id_usuario, nombre_usuario]
-    """
-    datos_perfil :list = []
-    spotify = tk.Spotify(token)
-    usuario = spotify.current_user()
-    datos_perfil.append(usuario.id)
-    datos_perfil.append(usuario.display_name)
-    return datos_perfil
-
-def guardar_nuevo_perfil(token, refresh_token) -> None:
-    datos_usuario :list = datos_perfil_spotify(token)
-    datos_guardar :tuple = (datos_usuario[0], None, None, refresh_token)
-    tk.config_to_file("cuentas_spotify.txt", datos_guardar, datos_usuario[1])
-    with open("nombres_spotify.txt", "a") as f:
-        f.write(datos_usuario[1]+"\n")
+def guardar_nuevo_perfil(refresh_token, nombre_perfil) -> None:
+    datos_guardar: tuple = (ID_CLIENTE, None, URI_REDIRECCION, refresh_token)
+    tk.config_to_file("cuentas_spotify.txt", datos_guardar, nombre_perfil)
     
-def nuevo_perfil_spotify() -> None:
+def nuevo_perfil_spotify(nombre_perfil) -> None:
+    """Permite que el usuario inicie sesion y de permisos y luego guarda sus datos en un archivo."""
     credenciales :tk.Credentials = tk.Credentials(ID_CLIENTE, redirect_uri=URI_REDIRECCION)
     url, verificador = credenciales.pkce_user_authorisation(SCOPE)
     print(vis.INSTRUCCIONES)
@@ -54,27 +38,79 @@ def nuevo_perfil_spotify() -> None:
     codigo = tk.parse_code_from_url(url)
     token_usuario = credenciales.request_pkce_token(codigo, verificador)
     refresh_token = token_usuario.refresh_token
-    guardar_nuevo_perfil(token_usuario, refresh_token)
+    guardar_nuevo_perfil(refresh_token, nombre_perfil)
     print(vis.DATOS_GUARDADOS)
 
 def nuevo_perfil():
+    nombre: str = input("Ingrese el nombre del perfil: ")
     vis.youtube_spotify()
-    opcion :int = opciones([1,2])
+    opcion: int = opciones([1, 2])
     if opcion == 1:
         pass
     else:
-        nuevo_perfil_spotify()
+        nuevo_perfil_spotify(nombre)
+    with open("nombres_perfiles.txt", "a") as f:
+        f.write(nombre+"\n")
+
+def perfiles_guardados() -> list:
+    """
+    Devuelve una lista con los nombres de los perfiles guardados que saca de un archivo,
+    si no encuentra ese archivo entonces devuelve una lista vacia.
+    """
+    nombres_perfiles: list = []
+    try:
+        archivo = open("nombres_perfiles.txt", "r")
+    except FileNotFoundError:
+        print(vis.NO_PERFILES)
+    else:
+        for linea in archivo:
+            nombres_perfiles.append(linea.rstrip())
+        archivo.close()
+    finally:
+        return nombres_perfiles
+
+def elegir_perfil() -> str:
+    nombres_perfiles: list = perfiles_guardados()
+    if nombres_perfiles:
+        vis.visual_lista_elementos(nombres_perfiles, "Perfiles Guardados", True)
+        numeros_permitidos: list = [x for x in range(1,len(nombres_perfiles)+1)]
+        opcion: int = opciones(numeros_permitidos)
+        return nombres_perfiles[opcion-1]
+    else:
+        return "no_eligio_perfil"
 
 def manejo_perfiles():
-    print(vis.MENU_PERFILES)
-    opcion :int = opciones([1,2])
-    if opcion == 1:
-        pass
+    terminar: bool = False
+    eligio_perfil: bool = False
+    while not terminar:
+        vis.menu_perfiles(eligio_perfil)
+        opcion: int = opciones([1, 2, 3])
+        if opcion == 1:
+            perfil: str = elegir_perfil()
+            if perfil != "no_eligio_perfil":
+                eligio_perfil: bool = True
+        elif opcion == 2:
+            nuevo_perfil()
+        else:
+            terminar: bool = True
+    if eligio_perfil:
+        return perfil
     else:
-        nuevo_perfil()
+        return "no_eligio_perfil"
 
 def main() -> None:
     vis.inicio()
-    manejo_perfiles()
-
+    perfil: str = manejo_perfiles()
+    if perfil != "no_eligio_perfil":
+        terminar: bool = False
+        while not terminar:
+            vis.menu_opciones()
+            opcion: int = opciones([1, 2, 3, 4, 5, 6, 7])
+            if opcion == 1:
+                pass
+            elif opcion == 2:
+                pass
+            elif opcion == 7:
+                terminar: bool = True
+        # datos = tk.config_from_file("cuentas_spotify.txt", perfil, True)
 main()
