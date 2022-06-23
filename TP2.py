@@ -74,7 +74,37 @@ def manejo_perfiles():
         nuevo_perfil()
 
 def main() -> None:
+  
     vis.inicio()
     manejo_perfiles()
+    
+    
+    token_spotify: str = autenticar()
+    token_youtube: str = " "
+
+    ##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
+    print(vis.MENU)
+    seleccion=("      >>>    ")
+    while not seleccion.isnumeric and int(seleccion)>3 and int(seleccion)<1:
+        seleccion = input("Inválido. Vuelva a ingresar >>> ")
+    seleccion=int(seleccion)
+
+    if seleccion == 1:
+        #Listar las playlist
+        pass
+    elif seleccion == 2:
+        #Exportar analisis de playlist a CSV
+        analisis_de_playlist(token_spotify, token_youtube, dummy_playlist_dict) 
+        pass
+    elif seleccion == 3:
+        #Buscar y administrar canción
+        administracion_de_canciones(token_spotify, token_youtube, dummy_playlist_dict)
+        pass
+    elif seleccion == 4:
+        #Sincronizar playlists
+        pass
+    elif seleccion == 5:
+        #Generar wordcloud
+        pass
 
 main()
