@@ -9,27 +9,30 @@ def ingreso_genius()->str:
     return token_genius
 
 
-
-
-def extraer_letra(token_genius)->str:
+def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
     genius = Genius(token_genius)
     es_cancion: bool = False
-    while es_cancion==False:
-        nombre_cantante: str = input("Nombre del cantante:")
-        nombre_cancion: str = input("Nombre de canción: ")
-        # saca los headers
-        genius.remove_section_headers = True
-        # Exclude songs with these words in their title
-        genius.excluded_terms = ["(Remix)", "(Live)", "(Cover)"]
-        # Turn off status messages
-        genius.verbose = False
-        song = genius.search_song(nombre_cancion, nombre_cantante)
-        print(song)
-        ser_o_no_ser: str = input("Es la canción que usted busca? (s/n)")
-        if ser_o_no_ser in "sS":
-            es_cancion=True
-        else:
-            es_cancion=False
+     # saca los headers
+    genius.remove_section_headers = True
+    # Exclude songs with these words in their title
+    genius.excluded_terms = ["(Remix)", "(Live)", "(Cover)"]
+    # Turn off status messages
+    genius.verbose = False
+
+    if cancion == "0" and artista == "0":
+        es_cancion: bool = False
+        while es_cancion == False:
+            cancion = input("Nombre del cantante:")
+            artista = input("Nombre de canción: ")
+            song = genius.search_song(nombre_cancion, nombre_cantante)
+            print(song)
+            ser_o_no_ser: str = input("Es la canción que usted busca? (s/n)")
+            if ser_o_no_ser in "sS":
+                es_cancion = True
+            else:
+                es_cancion = False
+    else:
+        song = genius.search_song(cancion, artista)
     letra_song: str = str(song.lyrics)
     return letra_song
 
