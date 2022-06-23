@@ -84,7 +84,7 @@ def main() -> None:
 
     ##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
     print(vis.MENU)
-    seleccion=("      >>>    ")
+    seleccion=input("      >>>    ")
     while not seleccion.isnumeric and int(seleccion)>3 and int(seleccion)<1:
         seleccion = input("Inválido. Vuelva a ingresar >>> ")
     seleccion=int(seleccion)
