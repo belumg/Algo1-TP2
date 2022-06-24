@@ -27,7 +27,7 @@ def guardar_nuevo_perfil(refresh_token, nombre_perfil) -> None:
     
 def nuevo_perfil_spotify(nombre_perfil) -> None:
     """Permite que el usuario inicie sesion y de permisos y luego guarda sus datos en un archivo."""
-    credenciales :tk.Credentials = tk.Credentials(ID_CLIENTE, redirect_uri=URI_REDIRECCION)
+    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(ID_CLIENTE, redirect_uri=URI_REDIRECCION)
     url, verificador = credenciales.pkce_user_authorisation(SCOPE)
     print(vis.INSTRUCCIONES)
     input("Presione Enter para que se abra Spotify: ")
@@ -35,9 +35,9 @@ def nuevo_perfil_spotify(nombre_perfil) -> None:
     print()
     print("Aqui abajo debes ingresar la URL que copiaste:  ")
     url :str = input("--->  ").strip()
-    codigo = tk.parse_code_from_url(url)
-    token_usuario = credenciales.request_pkce_token(codigo, verificador)
-    refresh_token = token_usuario.refresh_token
+    codigo: str= tk.parse_code_from_url(url)
+    token_usuario: tk.RefreshingToken = credenciales.request_pkce_token(codigo, verificador)
+    refresh_token: str = token_usuario.refresh_token
     guardar_nuevo_perfil(refresh_token, nombre_perfil)
     print(vis.DATOS_GUARDADOS)
 
@@ -102,15 +102,18 @@ def main() -> None:
     vis.inicio()
     perfil: str = manejo_perfiles()
     if perfil != "no_eligio_perfil":
+        datos_usuario: tuple = tk.config_from_file("cuentas_spotify.txt", perfil, True)
+        token = tk.refresh_pkce_token(datos_usuario[0], datos_usuario[3])
+        print(token)
         terminar: bool = False
         while not terminar:
             vis.menu_opciones()
-            opcion: int = opciones([1, 2, 3, 4, 5, 6, 7])
+            opcion: int = opciones([1, 2, 3, 4, 5, 6, 7, 8])
             if opcion == 1:
                 pass
             elif opcion == 2:
                 pass
-            elif opcion == 7:
+            elif opcion == 8:
                 terminar: bool = True
-        # datos = tk.config_from_file("cuentas_spotify.txt", perfil, True)
+        
 main()
