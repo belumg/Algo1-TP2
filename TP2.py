@@ -78,9 +78,16 @@ def main() -> None:
     vis.inicio()
     manejo_perfiles()
     
-    
     token_spotify: str = autenticar()
     token_youtube: str = " "
+    
+    # usuario_actual: dict= {
+    #     'username': str,
+    #     'token_spotify' : str,
+    #     'token_youtube' : str,
+    #     'playlists_youtube' : list,
+    #     'playlists_spotify' : list
+    # }
 
     ##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
     print(vis.MENU)
@@ -94,17 +101,21 @@ def main() -> None:
         pass
     elif seleccion == 2:
         #Exportar analisis de playlist a CSV
-        analisis_de_playlist(token_spotify, token_youtube, dummy_playlist_dict) 
-        pass
-    elif seleccion == 3:
-        #Buscar y administrar canción
-        administracion_de_canciones(token_spotify, token_youtube, dummy_playlist_dict)
+        analisis_de_playlist(usuario_actual)
+    elif seleccion == 3: 
+        # Crear playlist
         pass
     elif seleccion == 4:
+        #Buscar y administrar canción
+        administracion_de_canciones(usuario_actual)
+    elif seleccion == 5:
         #Sincronizar playlists
         pass
-    elif seleccion == 5:
+    elif seleccion == 6:
         #Generar wordcloud
+        pass
+    elif seleccion == 7: 
+        #Cambiar de perfil
         pass
 
 main()
