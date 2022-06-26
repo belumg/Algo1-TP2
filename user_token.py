@@ -93,10 +93,7 @@ def manejo_perfiles():
             nuevo_perfil()
         else:
             terminar: bool = True
-    if perfil_elegido:
-        return perfil
-    else:
-        return "no_eligio_perfil"
+    return perfil_elegido
 
 def conseguir_id_usuario(spotify):
     datos_usuario = spotify.current_user()
@@ -113,7 +110,7 @@ def playlists_spotify(spotify, id_usuario) -> None:
 def main() -> None:
     vis.inicio()
     perfil: str = manejo_perfiles()
-    if perfil != "no_eligio_perfil":
+    if perfil:
         datos_usuario: tuple = tk.config_from_file("cuentas_spotify.txt", perfil, True)
         token = tk.refresh_user_token(*datos_usuario[:2], datos_usuario[3])
         spotify = tk.Spotify(token)
