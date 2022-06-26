@@ -81,22 +81,34 @@ def elegir_perfil() -> str:
 
 def manejo_perfiles():
     terminar: bool = False
-    eligio_perfil: bool = False
+    perfil_elegido: str = ""
     while not terminar:
-        vis.menu_perfiles(eligio_perfil)
+        vis.menu_perfiles(perfil_elegido)
         opcion: int = opciones([1, 2, 3])
         if opcion == 1:
             perfil: str = elegir_perfil()
             if perfil != "no_eligio_perfil":
-                eligio_perfil: bool = True
+                perfil_elegido: str = perfil
         elif opcion == 2:
             nuevo_perfil()
         else:
             terminar: bool = True
-    if eligio_perfil:
+    if perfil_elegido:
         return perfil
     else:
         return "no_eligio_perfil"
+
+def conseguir_id_usuario(spotify):
+    datos_usuario = spotify.current_user()
+    return datos_usuario.id
+
+def playlists_spotify(spotify, id_usuario) -> None:
+    datos_playlists = spotify.playlists(id_usuario)
+    nombres = [x.name for x in datos_playlists.items]
+    if nombres:
+        vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
+    else:
+        print(vis.NO_PLAYLIST)
 
 def main() -> None:
     vis.inicio()
@@ -104,15 +116,19 @@ def main() -> None:
     if perfil != "no_eligio_perfil":
         datos_usuario: tuple = tk.config_from_file("cuentas_spotify.txt", perfil, True)
         token = tk.refresh_user_token(*datos_usuario[:2], datos_usuario[3])
-        print("TOKEN", token)
-        print("DATOS", datos_usuario)
+        spotify = tk.Spotify(token)
+        id_usuario = conseguir_id_usuario(spotify)
         terminar: bool = False
         while not terminar:
             vis.menu_opciones()
             opcion: int = opciones([1, 2, 3, 4, 5, 6, 7, 8])
             if opcion == 1:
-                pass
+                playlists_spotify(spotify, id_usuario)
             elif opcion == 2:
+                print(token.is_expiring)
+                print(token.expires_in)
+                print(token.expires_at)
+            elif opcion == 3:
                 pass
             elif opcion == 8:
                 terminar: bool = True
