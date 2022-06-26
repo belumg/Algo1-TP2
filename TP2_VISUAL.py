@@ -24,15 +24,16 @@ def inicio() -> None:
     input("         Presione Enter para continuar: ")
     print()
 
-def menu_perfiles(eligio_perfil:bool) -> None:
+def menu_perfiles(perfil:str) -> None:
     """
-    Pre: Recibe un bool.
+    Pre: Recibe un string, si es vacio entonces el usuario aun no eligio un perfil.
     Post: Imprime un menu con 3 opciones (perfil guardado, ingresar perfil, salir o volver al menu).
     """
-    if eligio_perfil:
-        mensaje: str = "Ir al menu principal"
-    else:
+    if not perfil:
         mensaje: str = "Terminar el programa."
+        perfil: str = "Aun no eligio un perfil"
+    else:
+        mensaje: str = "Volver al menu principal"
 
     print(f"""
                 ██████████████████████████████
@@ -41,10 +42,10 @@ def menu_perfiles(eligio_perfil:bool) -> None:
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
 
          ╔══════════════════════════════════════════╗
-
-          [1] Seleccionar perfil guardado.                        
-                                                        
-          [2] Ingresar perfil.
+                                                            
+          [1] Seleccionar perfil guardado.                  Perfil elegido:                   
+                                                            
+          [2] Ingresar perfil.                              - {perfil}
 
           [3] {mensaje}
 
