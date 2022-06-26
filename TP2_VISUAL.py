@@ -147,7 +147,7 @@ def visual_lista_elementos(lista_mostrar:list, mensaje:str, enumerar:bool) -> No
          y un bool que nos dira si tenemos que enumerar los elementos o no.
     Post: Imprime los elementos de la lista en un menu que tiene el mensaje ingresado.
     """
-    maxima_long = len(sorted(lista_mostrar, key=len, reverse=True)[0])
+    maxima_long = len(sorted(lista_mostrar, key=len, reverse=True)[0]) +5
     if maxima_long < LONGITUD: maxima_long = LONGITUD
     print(f"┏━{'━'*maxima_long}━┓")
     print(f"{mensaje}".center(maxima_long))
