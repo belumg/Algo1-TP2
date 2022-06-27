@@ -1,6 +1,6 @@
 import tekore as tk
 from webbrowser import open as web_open
-import VISUAL_V2 as vis
+import TP2_VISUAL as vis
 import os
 import csv
 
