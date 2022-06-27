@@ -24,48 +24,20 @@ def inicio() -> None:
     input("         Presione Enter para continuar: ")
     print()
 
-def menu_perfiles(perfil:str) -> None:
-    """
-    Pre: Recibe un string, si es vacio entonces el usuario aun no eligio un perfil.
-    Post: Imprime un menu con 3 opciones (perfil guardado, ingresar perfil, salir o volver al menu).
-    """
-    if not perfil:
-        mensaje: str = "Terminar el programa."
-        perfil: str = "Aun no eligio un perfil"
-    else:
-        mensaje: str = "Volver al menu principal"
-
-    print(f"""
+MENU_PERFILES = """
                 ██████████████████████████████
                 █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
                 ██─█▄█─███─▄█▀██─█▄▀─███─██─██
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
 
          ╔══════════════════════════════════════════╗
-                                                            
-          [1] Seleccionar perfil guardado.                  Perfil elegido:                   
-                                                            
-          [2] Ingresar perfil.                              - {perfil}
 
-          [3] {mensaje}
+          [1] Seleccionar perfil guardado.
 
-         ╚══════════════════════════════════════════╝  
-    """)
+          [2] Ingresar perfil.
 
-def youtube_spotify() -> None:
-    """Imprime un menu con 3 opciones (Youtube, Spotify, Volver al menu)."""
-    print(f"""
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-            Elegir plataforma:        
-
-        [1] Youtube 
-
-        [2] Spotify
-
-        [3] Volver al menu
-
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    """)
+         ╚══════════════════════════════════════════╝
+"""
 
 INSTRUCCIONES :str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -85,12 +57,18 @@ DATOS_GUARDADOS :str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-NO_PERFILES:str = """
+def youtube_spotify() -> None:
+    """Imprime un menu con 2 opciones (Youtube, Spotify)."""
+    print(f"""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-              NO ENCONTRAMOS
-          NINGUN PERFIL GUARDADO
+            Elegir plataforma:        
+
+        [1] Youtube 
+
+        [2] Spotify
+
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
+    """)
 
 ERROR_URL :str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -104,33 +82,33 @@ ERROR_URL :str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-def menu_opciones():
-    print("""
+
+MENU :str = """
                 ██████████████████████████████
                 █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
                 ██─█▄█─███─▄█▀██─█▄▀─███─██─██
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
 
          ╔══════════════════════════════════════════╗
+
+          [1] Autenticar perfil en Youtube y Spotify
+
+          [2] Listar las playlist actuales
           
-          [1] Listar playlist
+          [3] Exportar playlist elegida a CSV
 
-          [2] Exportar playlist (CSV)
+          [4] Crear nueva playlist
 
-          [3] Crear nueva playlist
+          [5] Buscar nuevos elementos para playlist
 
-          [4] Buscar canciones
+          [6] Sincronizar playlist elegida
 
-          [5] Sincronizar playlist
-
-          [6] Analizar playlist
-
-          [7] Cambiar de perfil
+          [7] Nube de palabras de playlist elegida
 
           [8] Salir
 
-         ╚══════════════════════════════════════════╝        
-    """)
+         ╚══════════════════════════════════════════╝  
+"""
 
 OPCION_NO_DISPONIBLE :str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -142,26 +120,20 @@ OPCION_NO_DISPONIBLE :str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-def visual_lista_elementos(lista_mostrar:list, mensaje:str, enumerar:bool) -> None:
+def visual_nombres_playlists(lista_playlists:list, plataforma:str) -> None:
     """
-    Pre: Recibe una lista no vacia, un mensaje que sera el titulo del menu
-         y un bool que nos dira si tenemos que enumerar los elementos o no.
-    Post: Imprime los elementos de la lista en un menu que tiene el mensaje ingresado.
+    Pre: Recibe una lista no vacia junto con el nombre de la plataforma.
+    Post: Imprime los elementos de la lista en un menu que tiene el nombre ingresado.
     """
-    maxima_long = len(sorted(lista_mostrar, key=len, reverse=True)[0]) +5
+    maxima_long = len(sorted(lista_playlists, key=len, reverse=True)[0])
     if maxima_long < LONGITUD: maxima_long = LONGITUD
     print(f"┏━{'━'*maxima_long}━┓")
-    print(f"{mensaje}".center(maxima_long))
+    print(f" Playlists de {plataforma}".center(maxima_long))
     print(f"┣━{'━'*maxima_long}━┫\n")
-    if enumerar:
-        for numero, dato in enumerate(lista_mostrar, 1):
-            print(f" [{numero}] {dato}\n")
-    else:
-        for dato in lista_mostrar:
-            print(f" - {dato}\n")
+    for playlist in lista_playlists:
+        print(f" - {playlist}\n")
     print(f"┗━{'━'*maxima_long}━┛")
-    if not enumerar:
-        input(" Presione Enter para volver al menu: ")
+    input(" Presione Enter para volver al menu: ")
 
 NO_PLAYLIST :str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
