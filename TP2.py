@@ -9,13 +9,20 @@ import googleapiclient.discovery
 import googleapiclient.errors
 
 # Módulos propios:
-import AUTENTICACION as auth
 import TP2_VISUAL as vis
-
 
 ID_CLIENTE: str = "ea4916f2e2d144a992b0f2d7bed6c25d"
 URI_REDIRECCION: str = "http://localhost:8888/callback"
 SCOPE = tk.scope.every
+
+def listar_playlistsYT(youtube: object) -> dict:
+    request = youtube.playlists().list(
+                    part="snippet,id",
+                    maxResults=50,
+                    mine=True
+                    )
+    response = request.execute()
+    return response
 
 def opciones(numeros_permitidos :list) -> int:
     """
@@ -31,6 +38,29 @@ def opciones(numeros_permitidos :list) -> int:
             else: print("   Ingrese un numero dentro de las opciones.")
         else: print("   Ingrese un numero.")
     return int(opcion)
+
+def autenticarYT() -> object:
+    scopes = ["https://www.googleapis.com/auth/youtube"]
+    
+    # Verificación HTTPS OAuthlib activada.
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+    api_service_name = "youtube"
+    api_version = "v3"
+    client_secrets_file = "credenciales_YT.json"
+
+    # Autorización.
+    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+            client_secrets_file, scopes
+            )
+    credentials = flow.run_console()
+
+    # Creo un cliente API para hacer solicitudes.
+    clienteYT = googleapiclient.discovery.build(
+                api_service_name, api_version, credentials=credentials
+                )
+
+    return clienteYT
 
 def guardar_nuevo_perfil(refresh_token, nombre_perfil) -> None:
     datos_guardar: tuple = (ID_CLIENTE, None, URI_REDIRECCION, refresh_token)
@@ -52,7 +82,7 @@ def nuevo_perfil_spotify(nombre_perfil) -> None:
     guardar_nuevo_perfil(refresh_token, nombre_perfil)
     print(vis.DATOS_GUARDADOS)
 
-def nuevo_perfil():
+def nuevo_perfil() -> str:
     nombre: str = input("Ingrese el nombre del perfil: ")
     vis.youtube_spotify()
     opcion: int = opciones([1, 2])
@@ -109,20 +139,6 @@ def manejo_perfiles():
     else:
         return "no_eligio_perfil"
 
-def listar_playlistsYT() -> list:
-    playlistsYT: list = []
-    request = auth.youtube.playlists().list(
-                    part="snippet,contentDetails",
-                    maxResults=50,
-                    mine=True
-                )
-    response = request.execute()
-    # Capturo los nombres de las playlists:
-    for elementos in response["items"]:
-        playlistsYT.append(elementos["snippet"]["title"])
-
-    return playlistsYT
-
 def main() -> None:
     vis.inicio()
     perfil: str = manejo_perfiles()
@@ -135,7 +151,15 @@ def main() -> None:
             vis.menu_opciones()
             opcion: int = opciones([1, 2, 3, 4, 5, 6, 7, 8])
             if opcion == 1:
-                lista: list = listar_playlistsYT()
+                # Lo pongo así asumiendo que se elije YouTube. Hay que modificarlo.
+                # Esto de autenticarYT también hay que sacarlo. Lo pongo nomás para que no me tire error.
+                youtube: object = autenticarYT()
+                dict_rta: dict = listar_playlistsYT(youtube)
+                lista: list = []
+                # Capturo los nombres de las playlists:
+                for elementos in dict_rta["items"]:
+                    lista.append(elementos["snippet"]["title"])
+                # Ahora imprimo la lista por pantalla:    
                 vis.visual_lista_elementos(lista, "YouTube", False)
             elif opcion == 2:
                 pass
