@@ -2,7 +2,8 @@ import tekore as tk
 from webbrowser import open as web_open
 import TP2_VISUAL as vis
 
-ID_CLIENTE: str = "ea4916f2e2d144a992b0f2d7bed6c25d"
+ID_CLIENTE: str = "176365611325455e8059fbd545371d89"
+CLIENTE_SECRETO: str = "ed35a90b681042f4bbad9f284383c88a"
 URI_REDIRECCION: str = "http://localhost:8888/callback"
 SCOPE = tk.scope.every
 
@@ -22,21 +23,20 @@ def opciones(numeros_permitidos :list) -> int:
     return int(opcion)
 
 def guardar_nuevo_perfil(refresh_token, nombre_perfil) -> None:
-    datos_guardar: tuple = (ID_CLIENTE, None, URI_REDIRECCION, refresh_token)
+    datos_guardar: tuple = (ID_CLIENTE, CLIENTE_SECRETO, URI_REDIRECCION, refresh_token)
     tk.config_to_file("cuentas_spotify.txt", datos_guardar, nombre_perfil)
     
 def nuevo_perfil_spotify(nombre_perfil) -> None:
     """Permite que el usuario inicie sesion y de permisos y luego guarda sus datos en un archivo."""
-    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(ID_CLIENTE, redirect_uri=URI_REDIRECCION)
-    url, verificador = credenciales.pkce_user_authorisation(SCOPE)
+    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(ID_CLIENTE, CLIENTE_SECRETO, URI_REDIRECCION)
+    auth = tk.UserAuth(credenciales, SCOPE)
     print(vis.INSTRUCCIONES)
     input("Presione Enter para que se abra Spotify: ")
-    web_open(url)
+    web_open(auth.url)
     print()
     print("Aqui abajo debes ingresar la URL que copiaste:  ")
     url :str = input("--->  ").strip()
-    codigo: str= tk.parse_code_from_url(url)
-    token_usuario: tk.RefreshingToken = credenciales.request_pkce_token(codigo, verificador)
+    token_usuario: tk.RefreshingToken = auth.request_token(url=url)
     refresh_token: str = token_usuario.refresh_token
     guardar_nuevo_perfil(refresh_token, nombre_perfil)
     print(vis.DATOS_GUARDADOS)
@@ -81,72 +81,53 @@ def elegir_perfil() -> str:
 
 def manejo_perfiles():
     terminar: bool = False
-    eligio_perfil: bool = False
+    perfil_elegido: str = ""
     while not terminar:
-        vis.menu_perfiles(eligio_perfil)
+        vis.menu_perfiles(perfil_elegido)
         opcion: int = opciones([1, 2, 3])
         if opcion == 1:
             perfil: str = elegir_perfil()
             if perfil != "no_eligio_perfil":
-                eligio_perfil: bool = True
+                perfil_elegido: str = perfil
         elif opcion == 2:
             nuevo_perfil()
         else:
             terminar: bool = True
-    if eligio_perfil:
-        return perfil
+    return perfil_elegido
+
+def conseguir_id_usuario(spotify):
+    datos_usuario = spotify.current_user()
+    return datos_usuario.id
+
+def playlists_spotify(spotify, id_usuario) -> None:
+    datos_playlists = spotify.playlists(id_usuario)
+    nombres = [x.name for x in datos_playlists.items]
+    if nombres:
+        vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
     else:
-        return "no_eligio_perfil"
+        print(vis.NO_PLAYLIST)
 
 def main() -> None:
-  
     vis.inicio()
-
     perfil: str = manejo_perfiles()
-    if perfil != "no_eligio_perfil":
+    if perfil:
         datos_usuario: tuple = tk.config_from_file("cuentas_spotify.txt", perfil, True)
-        token = tk.refresh_pkce_token(datos_usuario[0], datos_usuario[3])
-        print(token)
+        token = tk.refresh_user_token(*datos_usuario[:2], datos_usuario[3])
+        spotify = tk.Spotify(token)
+        id_usuario = conseguir_id_usuario(spotify)
         terminar: bool = False
+        while not terminar:
+            vis.menu_opciones()
+            opcion: int = opciones([1, 2, 3, 4, 5, 6, 7, 8])
+            if opcion == 1:
+                playlists_spotify(spotify, id_usuario)
+            elif opcion == 2:
+                print(token.is_expiring)
+                print(token.expires_in)
+                print(token.expires_at)
+            elif opcion == 3:
+                pass
+            elif opcion == 8:
+                terminar: bool = True
         
-# usuario_actual: dict= {
-    #     'username': str,
-    #     'token_spotify' : str,
-    #     'token_youtube' : str,
-    #     'playlists_youtube' : list,
-    #     'playlists_spotify' : list
-    # }
-        
-##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
-    while not terminar:
-        vis.menu_opciones()
-        opcion: int = opciones([1, 2, 3, 4, 5, 6, 7, 8])
-        seleccion=input("      >>>    ")
-        while not seleccion.isnumeric and int(seleccion)>3 and int(seleccion)<1:
-          seleccion = input("Inválido. Vuelva a ingresar >>> ")
-        seleccion=int(seleccion)
-        if seleccion == 1:
-        #Listar las playlist
-        pass
-        elif seleccion == 2:
-            #Exportar analisis de playlist a CSV
-            analisis_de_playlist(usuario_actual)
-        elif seleccion == 3: 
-            # Crear playlist
-            pass
-        elif seleccion == 4:
-            #Buscar y administrar canción
-            administracion_de_canciones(usuario_actual)
-        elif seleccion == 5:
-            #Sincronizar playlists
-            pass
-        elif seleccion == 6:
-            #Generar wordcloud
-            pass
-        elif seleccion == 7: 
-            #Cambiar de perfil
-            pass
-        elif opcion == 8:
-            terminar: bool = True
-    
 main()
