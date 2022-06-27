@@ -24,6 +24,7 @@ def opciones(numeros_permitidos: list) -> int:
         else: print("   Ingrese un numero.")
     return int(opcion)
 
+
 def autenticar_spotify() -> str:
     refresh_token: str = ""
     credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(ID_CLIENTE, CLIENTE_SECRETO, URI_REDIRECCION)
@@ -42,6 +43,7 @@ def autenticar_spotify() -> str:
         refresh_token: str = token.refresh_token
         print(vis.DATOS_GUARDADOS)
     return refresh_token
+
 
 def guardar_perfil(nombre:str, refresh_token: str = "", youtube: str = "") -> None:
     with open("perfiles_datos.csv", "a", newline="", encoding="UTF-8") as archivo_csv:
@@ -137,6 +139,25 @@ def datos_por_indice(indice: int) -> list:
     datos :list = next(csv_reader)
     return datos
 
+def conseguir_datos_playlists(spotify, id_usuario):
+    datos = []
+    datos_playlists = spotify.playlists(id_usuario)
+    for playlist in datos_playlists.items:
+        diccionario = {}
+        diccionario["name"] = playlist.name
+        diccionario["id"] = playlist.id
+        diccionario["collaborative"] = playlist.collaborative
+        diccionario["description"] = playlist.description
+        """
+        canciones = []
+        for cancion in spotify.playlist_items(playlist.id).items:
+            canciones.append(cancion.track.name)
+        diccionario["tracks"] = canciones
+        """
+        datos.append(diccionario)
+    return datos
+
+
 def datos_necesarios_perfil(perfil: dict) -> None:
     nombres_usados: list = nombres_perfiles_guardados()
     indice_datos: int = nombres_usados.index(perfil["nombre"])
@@ -148,6 +169,9 @@ def datos_necesarios_perfil(perfil: dict) -> None:
     if "spotify" in perfil:
         id_usuario = spotify.current_user().id
         perfil["id_usuario_spotify"] = id_usuario
+    if "spotify" in perfil and "id_usuario_spotify" in perfil:
+        datos_playlists: list = conseguir_datos_playlists(perfil["spotify"], perfil["id_usuario_spotify"])
+        perfil["playlists_spotify"] = datos_playlists
 
 def datos_agregados_correctamente(perfil: dict) -> bool:
     if not perfil["nombre"]:
@@ -156,5 +180,7 @@ def datos_agregados_correctamente(perfil: dict) -> bool:
     if "spotify" not in perfil:
         return False
     elif "id_usuario_spotify" not in perfil:
+        return False
+    elif "playlists_spotify" not in perfil:
         return False
     return True
