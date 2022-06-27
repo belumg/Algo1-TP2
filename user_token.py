@@ -2,8 +2,8 @@ import tekore as tk
 from webbrowser import open as web_open
 import TP2_VISUAL as vis
 
-ID_CLIENTE: str = "ea4916f2e2d144a992b0f2d7bed6c25d"
-CLIENTE_SECRETO: str = "54833ae03ee847c385cd918d869b1052"
+ID_CLIENTE: str = "176365611325455e8059fbd545371d89"
+CLIENTE_SECRETO: str = "ed35a90b681042f4bbad9f284383c88a"
 URI_REDIRECCION: str = "http://localhost:8888/callback"
 SCOPE = tk.scope.every
 
