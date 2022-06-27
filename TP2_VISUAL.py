@@ -1,6 +1,6 @@
 LONGITUD = 45
 
-LOGO_INICIO :str = """
+LOGO_INICIO: str = """
     ╔════════════════════════════════════════════════════════════╗
         ⠀⠀⠀⢲⣦⠀⢠⣶⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀      ⠀⠀⠀⠀⠀⠀⠀⢀⣠⣤⣤⣶⣶⣶⣶⣤⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀  
         ⠀⠀⠀⠘⣿⡄⣼⡟⢀⣤⣤⣄⠀⢠⣄⠀⣠⡄⠀⠀⠀⠀      ⠀⠀⠀⠀⢀⣤⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⡀⠀⠀⠀⠀      Este Software es traido a ustedes por:
@@ -24,9 +24,9 @@ def inicio() -> None:
     input("         Presione Enter para continuar: ")
     print()
 
-def menu_perfiles(perfil:list) -> None:
+def menu_perfiles(perfil: list) -> None:
     """
-    Pre: Recibe una lista, si esta vacia entonces el usuario aun no eligio un perfil.
+    Pre: Recibe un string, si esta vacio entonces el usuario aun no eligio un perfil.
     Post: Imprime un menu con 3 opciones (perfil guardado, ingresar perfil, salir o volver al menu).
     """
     if not perfil:
@@ -34,7 +34,7 @@ def menu_perfiles(perfil:list) -> None:
         mensaje_perfil: str = "Aun no eligio un perfil"
     else:
         mensaje: str = "Volver al menu principal"
-        mensaje_perfil: str = perfil[0]
+        mensaje_perfil: str = perfil
 
     print(f"""
                 ██████████████████████████████
@@ -53,22 +53,44 @@ def menu_perfiles(perfil:list) -> None:
          ╚══════════════════════════════════════════╝  
     """)
 
-def youtube_spotify() -> None:
+def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = []) -> None:
     """Imprime un menu con 3 opciones (Youtube, Spotify, Volver al menu)."""
+    youtube: str = ""
+    spotify: str = ""
+    if crear_perfil and opciones_elegidas:
+        mensaje: str = "Crear perfil"
+        if 1 in opciones_elegidas: youtube: str = "--> Permisos aceptados"      #REVISAR (PONER UN MEJOR STRING)
+        if 2 in opciones_elegidas: spotify: str = "--> Permisos aceptados"
+    elif crear_perfil and not opciones_elegidas:
+        mensaje: str = "No crear perfil"
+    else:
+        mensaje: str = "Volver al menu"
+
     print(f"""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
             Elegir plataforma:        
 
-        [1] Youtube 
+        [1] Youtube      {youtube}
 
-        [2] Spotify
+        [2] Spotify      {spotify}
 
-        [3] Volver al menu
+        [3] {mensaje}
 
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """)
 
-INSTRUCCIONES :str = """
+NOMBRE_NO_VALIDO: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+            [NOMBRE INCORRECTO]
+
+      Posibles causas:
+        - Esta vacio.
+        - Ese nombre ya existe.
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+INSTRUCCIONES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
               [INSTRUCCIONES]
 
@@ -77,23 +99,9 @@ INSTRUCCIONES :str = """
      - Copiar nueva URL.
 
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
 """
 
-DATOS_GUARDADOS :str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-      [DATOS GUARDADOS EXITOSAMENTE]
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
-
-NO_PERFILES:str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-              NO ENCONTRAMOS
-          NINGUN PERFIL GUARDADO
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
-
-ERROR_URL :str = """
+ERROR_URL: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
              [URL INCORRECTA]
 
@@ -105,41 +113,16 @@ ERROR_URL :str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-def menu_opciones():
-    print("""
-                ██████████████████████████████
-                █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
-                ██─█▄█─███─▄█▀██─█▄▀─███─██─██
-                ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
-
-         ╔══════════════════════════════════════════╗
-          
-          [1] Listar playlist
-
-          [2] Exportar playlist (CSV)
-
-          [3] Crear nueva playlist
-
-          [4] Buscar canciones
-
-          [5] Sincronizar playlist
-
-          [6] Analizar playlist
-
-          [7] Cambiar de perfil
-
-          [8] Salir
-
-         ╚══════════════════════════════════════════╝        
-    """)
-
-OPCION_NO_DISPONIBLE :str = """
+DATOS_GUARDADOS: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-          [OPCION NO DISPONIBLE]
+      [DATOS GUARDADOS EXITOSAMENTE]
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
 
-       Primero debes autenticar un 
-       perfil en alguna plataforma
-
+NO_PERFILES: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+              NO ENCONTRAMOS
+          NINGUN PERFIL GUARDADO
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
@@ -163,12 +146,3 @@ def visual_lista_elementos(lista_mostrar:list, mensaje:str, enumerar:bool) -> No
     print(f"┗━{'━'*maxima_long}━┛")
     if not enumerar:
         input(" Presione Enter para volver al menu: ")
-
-NO_PLAYLIST :str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-
-        No se encontraron playlists   
-         guardadas en esta cuenta.
-
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
