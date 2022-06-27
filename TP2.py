@@ -99,21 +99,54 @@ def manejo_perfiles():
         return "no_eligio_perfil"
 
 def main() -> None:
+  
     vis.inicio()
+
     perfil: str = manejo_perfiles()
     if perfil != "no_eligio_perfil":
         datos_usuario: tuple = tk.config_from_file("cuentas_spotify.txt", perfil, True)
         token = tk.refresh_pkce_token(datos_usuario[0], datos_usuario[3])
         print(token)
         terminar: bool = False
-        while not terminar:
-            vis.menu_opciones()
-            opcion: int = opciones([1, 2, 3, 4, 5, 6, 7, 8])
-            if opcion == 1:
-                pass
-            elif opcion == 2:
-                pass
-            elif opcion == 8:
-                terminar: bool = True
         
+# usuario_actual: dict= {
+    #     'username': str,
+    #     'token_spotify' : str,
+    #     'token_youtube' : str,
+    #     'playlists_youtube' : list,
+    #     'playlists_spotify' : list
+    # }
+        
+##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
+    while not terminar:
+        vis.menu_opciones()
+        opcion: int = opciones([1, 2, 3, 4, 5, 6, 7, 8])
+        seleccion=input("      >>>    ")
+        while not seleccion.isnumeric and int(seleccion)>3 and int(seleccion)<1:
+          seleccion = input("Inválido. Vuelva a ingresar >>> ")
+        seleccion=int(seleccion)
+        if seleccion == 1:
+        #Listar las playlist
+        pass
+        elif seleccion == 2:
+            #Exportar analisis de playlist a CSV
+            analisis_de_playlist(usuario_actual)
+        elif seleccion == 3: 
+            # Crear playlist
+            pass
+        elif seleccion == 4:
+            #Buscar y administrar canción
+            administracion_de_canciones(usuario_actual)
+        elif seleccion == 5:
+            #Sincronizar playlists
+            pass
+        elif seleccion == 6:
+            #Generar wordcloud
+            pass
+        elif seleccion == 7: 
+            #Cambiar de perfil
+            pass
+        elif opcion == 8:
+            terminar: bool = True
+    
 main()
