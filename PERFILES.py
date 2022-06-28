@@ -192,6 +192,25 @@ def conseguir_datos_playlists(spotify, id_usuario):
         datos.append(diccionario)
     return datos
 
+def probando(funcion_a_probar, datos_que_necesita: list = []):
+    terminar: bool = False
+    dato_buscado = ""
+    while not terminar:
+        try:
+            if datos_que_necesita:
+                dato_buscado = funcion_a_probar(*datos_que_necesita)
+            else:
+                dato_buscado = funcion_a_probar()
+        except:
+            print(vis.NO_INTERNET)
+            print(" Necesitamos internet para acceder a los datos de su perfil.")
+            intentar: str = input("Desea intentarlo de nuevo(si/no)?  ").lower()
+            if intentar == "no":
+                terminar: bool = True
+        else:
+            terminar: bool = True
+    return dato_buscado
+    
 def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YOUTUBE
     """
     Pre: Recibe un diccionario solo con el nombre del perfil.
@@ -201,12 +220,15 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
     indice_datos: int = nombres_usados.index(perfil["nombre"])
     datos_perfil: list = datos_por_indice(indice_datos)
     if datos_perfil[1]:
-        token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, datos_perfil[1])
-        spotify = tk.Spotify(token)
-        perfil["spotify"] = spotify
+        datos_que_necesita: list = [ID_CLIENTE, CLIENTE_SECRETO, datos_perfil[1]]
+        token = probando(tk.refresh_user_token, datos_que_necesita)
+        if token:
+            spotify = tk.Spotify(token)
+            perfil["spotify"] = spotify
     if "spotify" in perfil:
-        id_usuario = spotify.current_user().id
-        perfil["id_usuario_spotify"] = id_usuario
+        id_usuario = probando(spotify.current_user)
+        if id_usuario:
+            perfil["id_usuario_spotify"] = id_usuario.id
     if "spotify" in perfil and "id_usuario_spotify" in perfil:
         datos_playlists: list = conseguir_datos_playlists(perfil["spotify"], perfil["id_usuario_spotify"])
         perfil["playlists_spotify"] = datos_playlists
