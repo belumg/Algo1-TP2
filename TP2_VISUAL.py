@@ -24,7 +24,7 @@ def inicio() -> None:
     input("         Presione Enter para continuar: ")
     print()
 
-def menu_perfiles(perfil: list) -> None:
+def menu_perfiles(perfil: str) -> None:
     """
     Pre: Recibe un string, si esta vacio entonces el usuario aun no eligio un perfil.
     Post: Imprime un menu con 3 opciones (perfil guardado, ingresar perfil, salir o volver al menu).
@@ -54,7 +54,12 @@ def menu_perfiles(perfil: list) -> None:
     """)
 
 def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = []) -> None:
-    """Imprime un menu con 3 opciones (Youtube, Spotify, Volver al menu)."""
+    """
+    Pre: Recibe un bool y una lista.
+    Post: Imprime un menu que tiene 3 valores que variaran segun los datos recibidos por parametro.
+          Si el bool es True entonces apareceran los mensajes relacionados con perfiles.
+          Caso contrario solo sera un menu simple que te da la opcion de volver al menu original.
+    """
     youtube: str = ""
     spotify: str = ""
     if crear_perfil and opciones_elegidas:
