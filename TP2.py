@@ -12,6 +12,7 @@ import os
 from datetime import date
 import json
 import google_auth_oauthlib.flow
+import google.auth.transport.requests
 import googleapiclient.discovery
 import googleapiclient.errors
 
