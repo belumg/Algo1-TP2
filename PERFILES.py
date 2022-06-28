@@ -1,6 +1,6 @@
 import tekore as tk
 from webbrowser import open as web_open
-import TP2_VISUAL as vis
+import TP2_VISUAL.py as vis
 import os
 import csv
 
@@ -24,6 +24,8 @@ def opciones(numeros_permitidos: list) -> int:
         else: print("   Ingrese un numero.")
     return int(opcion)
 
+#### ----------------------------- AUTENTICACIÓN SPOTIFY ------------------------------------------
+###################################################################################################
 
 def autenticar_spotify() -> str:
     """Devuelve un refresh_token si la autenticacion salio bien, caso contrario devuelve un string vacio."""
@@ -45,6 +47,8 @@ def autenticar_spotify() -> str:
         print(vis.DATOS_GUARDADOS)
     return refresh_token
 
+#### ----------------------------- RELACIONADO CON PERFILES ---------------------------------------
+###################################################################################################
 
 def guardar_perfil(nombre:str, refresh_token: str = "", youtube: str = "") -> None:
     """
@@ -151,6 +155,9 @@ def manejo_perfiles(perfil: dict):
         else:
             terminar: bool = True
 
+#### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
+###################################################################################################
+
 def datos_por_indice(indice: int) -> list:
     """
     Pre: Recibe un indice que nos dice en donde se encuentra el perfil del que debemos sacar informacion.
@@ -184,7 +191,6 @@ def conseguir_datos_playlists(spotify, id_usuario):
         """
         datos.append(diccionario)
     return datos
-
 
 def datos_necesarios_perfil(perfil: dict) -> None:  #NECESITO INFORMACION DE YOUTUBE
     """
