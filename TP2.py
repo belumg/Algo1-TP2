@@ -1149,26 +1149,30 @@ def main() -> None:
 
     ##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
 
-    if seleccion == 1:
-        #Listar las playlist
-        pass
-    elif seleccion == 2:
-        #Exportar analisis de playlist a CSV
-        analisis_de_playlist(usuario_actual)
-    elif seleccion == 3: 
-        # Crear playlist
-        pass
-    elif seleccion == 4:
-        #Buscar y administrar canción
-        administracion_de_canciones(usuario_actual)
-    elif seleccion == 5:
-        #Sincronizar playlists
-        pass
-    elif seleccion == 6:
-        #Generar wordcloud
-        pass
-    elif seleccion == 7: 
-        #Cambiar de perfil
-        pass
+    seleccion = 9876543210
+    while seleccion != 0:
+        print(vis.MENU)
+        seleccion = input_num_con_control(0, 7)
+        if seleccion == 1:
+            #Listar las playlist
+            playlist_segun_servidor(usuario_actual)
+        elif seleccion == 2:
+            #Exportar analisis de playlist a CSV
+            analisis_de_playlist(usuario_actual)
+        elif seleccion == 3:
+            # Crear playlist
+            pass
+        elif seleccion == 4:
+            #Buscar y administrar canción
+            administracion_de_canciones(usuario_actual)
+        elif seleccion == 5:
+            #Sincronizar playlists
+            pass
+        elif seleccion == 6:
+            #Generar wordcloud
+            pass
+        elif seleccion == 7:
+            #Cambiar de perfil
+            pass
 
 main()
