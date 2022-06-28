@@ -1,6 +1,6 @@
 import tekore as tk
 from webbrowser import open as web_open
-import TP2_VISUAL.py as vis
+import TP2_VISUAL as vis
 import os
 import csv
 
@@ -31,7 +31,7 @@ def autenticar_spotify() -> str:
     """Devuelve un refresh_token si la autenticacion salio bien, caso contrario devuelve un string vacio."""
     refresh_token: str = ""
     credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(ID_CLIENTE, CLIENTE_SECRETO, URI_REDIRECCION)
-    auth: tk.UserAuth = tk.UserAuth(credenciales, SCOPE) # FALTA TYPING
+    auth: tk.UserAuth = tk.UserAuth(credenciales, SCOPE)
     print(vis.INSTRUCCIONES)
     input("Presione Enter para que se abra Spotify: ")
     web_open(auth.url)
@@ -107,7 +107,7 @@ def nuevo_perfil():
         elif opcion == 2:
             refresh_token: str = autenticar_spotify()
             if refresh_token:
-                opciones_elegidas.append(opcion)   #REVISAR EL APPEND, QUE PASA SI EL USUARIO USA ESTO 2 VECES
+                opciones_elegidas.append(opcion)   # REVISAR EL APPEND, QUE PASA SI EL USUARIO USA ESTO 2 VECES
         elif opcion == 3 and opciones_elegidas:
             guardar_perfil(nombre, refresh_token)
             print(vis.DATOS_GUARDADOS)
@@ -147,7 +147,7 @@ def manejo_perfiles(perfil: dict):
         vis.menu_perfiles(perfil["nombre"])
         opcion: int = opciones([1, 2, 3])
         if opcion == 1:
-            perfil_elegido: str = elegir_perfil(perfil)                             #EN REVISION
+            perfil_elegido: str = elegir_perfil(perfil)                             # EN REVISION
             if perfil_elegido:
                 perfil["nombre"] = perfil_elegido
         elif opcion == 2:
@@ -164,7 +164,7 @@ def datos_por_indice(indice: int) -> list:
     Post: Revisa el archivo de los perfiles, va hacia ese indice y luego devuelve una lista con los datos.
     """
     archivo_csv = open("perfiles_datos.csv", newline="", encoding="UTF-8")
-    csv_reader = csv.reader(archivo_csv, delimiter=",")                     #FALTA UN TRY/EXCEPT?
+    csv_reader = csv.reader(archivo_csv, delimiter=",")                     # FALTA UN TRY/EXCEPT?
     for x in range(indice+1):
         next(csv_reader)
     datos: list = next(csv_reader)
@@ -178,7 +178,7 @@ def conseguir_datos_playlists(spotify, id_usuario):
     datos = []
     datos_playlists = spotify.playlists(id_usuario)  # Que pasa si el usuario no tiene playlists?
     for playlist in datos_playlists.items:
-        diccionario: dict = {}                  #Deveria cambiarle el nombre.
+        diccionario: dict = {}                  # Deberia cambiarle el nombre.
         diccionario["name"] = playlist.name
         diccionario["id"] = playlist.id
         diccionario["collaborative"] = playlist.collaborative
@@ -192,7 +192,7 @@ def conseguir_datos_playlists(spotify, id_usuario):
         datos.append(diccionario)
     return datos
 
-def datos_necesarios_perfil(perfil: dict) -> None:  #NECESITO INFORMACION DE YOUTUBE
+def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YOUTUBE
     """
     Pre: Recibe un diccionario solo con el nombre del perfil.
     Post: Le agrega datos, como por ejemplo id, playlists, al diccionario recibido.
@@ -211,7 +211,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  #NECESITO INFORMACION DE YOU
         datos_playlists: list = conseguir_datos_playlists(perfil["spotify"], perfil["id_usuario_spotify"])
         perfil["playlists_spotify"] = datos_playlists
 
-def datos_agregados_correctamente(perfil: dict) -> bool:   #NECESITO INFORMACION DE YOUTUBE
+def datos_agregados_correctamente(perfil: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
     """
     Pre: Recibe un diccionario con los datos del perfil actual.
     Post: Devuelve un False si encuentra que falta un dato importante.
