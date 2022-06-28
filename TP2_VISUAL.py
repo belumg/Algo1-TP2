@@ -1,4 +1,4 @@
-LONGITUD = 45
+LONGITUD: int = 45
 
 LOGO_INICIO: str = """
     ╔════════════════════════════════════════════════════════════╗
@@ -151,3 +151,16 @@ def visual_lista_elementos(lista_mostrar:list, mensaje:str, enumerar:bool) -> No
     print(f"┗━{'━'*maxima_long}━┛")
     if not enumerar:
         input(" Presione Enter para volver al menu: ")
+
+NO_INTERNET: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   
+       
+         ▄██████████████▄▐█▄▄▄▄█▌
+         ██████▌▄▌▄▐▐▌███▌▀▀██▀▀
+         ████▄█▌▄▌▄▐▐▌▀███▄▄█▌
+         ▄▄▄▄▄██████████████▀
+
+       [NO HAY CONEXION A INTERNET]
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
