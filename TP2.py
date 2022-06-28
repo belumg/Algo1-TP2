@@ -3,10 +3,14 @@ import tekore as tk
 from webbrowser import open as web_open
 
 # Para trabajar con YouTube:
-import os
 import google_auth_oauthlib.flow
+import google.auth.transport.requests
 import googleapiclient.discovery
 import googleapiclient.errors
+
+# En general:
+import os
+import json
 
 # Módulos propios:
 import TP2_VISUAL as vis
@@ -39,26 +43,68 @@ def opciones(numeros_permitidos :list) -> int:
         else: print("   Ingrese un numero.")
     return int(opcion)
 
-def autenticarYT() -> object:
+def validar_permisosYT(usuario: str, youtube: object) -> object:
+    with open("datos_perfiles.json", "r") as f:
+        datos: dict = json.load(f)
+    
+    # Me guardo las claves que generó el usuario del perfil para YouTube.
+    claves: dict = datos[usuario]["youtube"]
+
+    # Recupero los permisos.
+    permisos = google.oauth2.credentials.Credentials(
+        token= claves["token"], refresh_token= claves["refresh_token"], #id_token=id_token, 
+        token_uri= claves["token_uri"], client_id= claves["client_id"], 
+        client_secret= claves["client_secret"], scopes= claves["scopes"]
+        )
+
+    # Verifico si son válidos.
+    if (permisos.expired == False):
+        # Solicito nuevos permisos y refresco los existentes.
+        solicitar = google.auth.transport.requests.Request()
+        permisos.refresh(solicitar)
+
+        # Los guardo en el archivo de credenciales de perfiles.
+        dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
+        with open("datos_perfiles.json", "w") as f:
+            json.dump(dicc, f)
+        
+        # Genero un nuevo cliente de YouTube.
+        api_service_name: str = "youtube"
+        api_version: str = "v3"
+        youtube: object = googleapiclient.discovery.build(
+                api_service_name, api_version, credentials=permisos
+                )
+
+        return youtube
+    else:
+        return youtube
+
+
+def autenticarYT(usuario: str) -> object:
     scopes = ["https://www.googleapis.com/auth/youtube"]
     
     # Verificación HTTPS OAuthlib activada.
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-    api_service_name = "youtube"
-    api_version = "v3"
-    client_secrets_file = "credenciales_YT.json"
+    api_service_name: str = "youtube"
+    api_version: str = "v3"
+    client_secrets_file: str = "credenciales_YT.json"
 
     # Autorización.
     flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
             client_secrets_file, scopes
             )
-    credentials = flow.run_console()
+    permisos = flow.run_console()
 
     # Creo un cliente API para hacer solicitudes.
-    clienteYT = googleapiclient.discovery.build(
-                api_service_name, api_version, credentials=credentials
-                )
+    clienteYT: object = googleapiclient.discovery.build(
+                        api_service_name, api_version, credentials=permisos
+                        )
+    
+    # Guardo los permisos otorgados.
+    dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
+    with open("datos_perfiles.json", "w") as f:
+        json.dump(dicc, f)
 
     return clienteYT
 
