@@ -80,21 +80,29 @@ def mostrame_esta()->None:
 
 
 def wordcloud() -> None:
+    print("Hola en esta seccion tenemos imagenes de palabras, si desea hacerlo con una playlist\n"
+          "de youtube marque (2) de lo contrario (1)")
+    opcion: str = input(">>>> ")
+    while opcion!= "1" and opcion!="2":
+        opcion = input(" *suspiro*..... Vamos de nuevo (1) o (2)")
+    opcion: int = int(opcion)
+
     detalles: dict = {}
-    # eleccion de lista
-    # seleccionar_playlist()
-    # normalizar_playlist()
+    mi_playlist: dict = {}
+    if opcion == 1:
+        seleccionar_playlist("spotify", mi_playlist, usuario_actual)
+    else:
+        seleccionar_playlist("youtube", mi_playlist, usuario_actual)
+        print("Puede ser que este resultado sea bastate malo, le recomiendo pasar la lista a spotify para un"
+              "mejor rendimiento :)")
+
+    importar_playlist(spotify, token_youtube, mi_playlist['id'], mi_playlist['name'], "spotify", detalles)
     letra_total = rejunte_letras(detalles)
     al_wordcloud(letra_total)
     mostrame_esta()
 
-def pruebiña()->None:
-    token = ingreso_genius()
-    letra = extraer_letra(token)
-    al_wordcloud(letra)
-    mostrame_esta()
 
-def main():
-    pruebiña()
 
-main()
+
+
+
