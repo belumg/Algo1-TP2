@@ -6,14 +6,13 @@ import TP2_VISUAL as vis
 from tekore import Spotify
 import requests
 from lyricsgenius import Genius
-import TP2_VISUAL as vis
-import webbrowser
 import time
 import csv
 import os
 from datetime import date
 import json
 import google_auth_oauthlib.flow
+import google.auth.transport.requests
 import googleapiclient.discovery
 import googleapiclient.errors
 
