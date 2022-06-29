@@ -436,11 +436,6 @@ def crear_playlist(user_id: str, spotify: object, token_youtube: object)->None:
 ###################################################################################################
 
 ### Funciones reutilizables >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def print_playlists_nombres(lista_playlists:list) -> None:
-    # !!! to-do !!!
-    # mover a vis y modificar acorde
-    for i in range(len(lista_playlists)):
-        print(f'{i+1} - {lista_playlists[i]["name"]}')
 
 def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
     lista_nombres: list = list()
@@ -559,7 +554,6 @@ def exportar_dict_a_cvs(extension:str, usuario:str, mi_dict:dict, nombre:str) ->
         w = csv.DictWriter(archivito, mi_dict.keys())
         w.writeheader()
         w.writerow(mi_dict)
-
 
 
 ### Funciones propias del analisis de atributos >>>>>>>>>>>>>>>>>>>>>>>>
