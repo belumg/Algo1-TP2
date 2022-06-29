@@ -1162,6 +1162,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
     # Spotify:
     refresh_token = obtener_refresh_token_perfil(perfil["username"])
     if refresh_token:
+        print("Consiguiendo datos de Spotify...")
         token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, refresh_token)
         spotify = tk.Spotify(token)
         perfil["spotify"] = spotify
@@ -1173,6 +1174,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         perfil["playlists_spotify"] = datos_playlists
     
     # Youtube:
+    print("Consiguiendo datos de Youtube...")
     youtube = validar_permisosYT(perfil["username"])
     perfil["youtube"] = youtube
     if "youtube" in perfil:
@@ -1188,7 +1190,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         perfil["playlists_youtube"] = datos_playlists
 
 
-def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
+def datos_agregados_correctamente(usuario_actual: dict) -> bool:
     """
     Pre: Recibe un diccionario con los datos del perfil actual.
     Post: Devuelve un False si encuentra que falta un dato importante.
@@ -1215,8 +1217,8 @@ def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO IN
 ###################################################################################################
 
 def validar_permisosYT(usuario: str) -> object:
-    with open("datos_perfiles_YT.json", "r") as f:
-        datos: dict = json.load(f)
+
+    datos: dict = sacar_info_json("datos_perfiles_YT.json")
 
     # Me guardo las claves que generó el usuario del perfil para YouTube.
     claves: dict = datos[usuario]["youtube"]
@@ -1235,9 +1237,8 @@ def validar_permisosYT(usuario: str) -> object:
         permisos.refresh(solicitar)
 
         # Los guardo en el archivo de credenciales de perfiles.
-        dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
-        with open("datos_perfiles_YT.json", "w") as f:
-            json.dump(dicc, f)
+        datos[usuario]["youtube"] = json.loads(permisos.to_json())
+        escribir_json(datos, "datos_perfiles_YT.json")
 
         # Genero un nuevo cliente de YouTube.
         api_service_name: str = "youtube"
@@ -1334,5 +1335,7 @@ def main() -> None:
         elif seleccion == 7:
             #Cambiar de perfil
             manejo_perfiles(usuario_actual)
+        else:
+            terminar: bool = True
 
 main()
