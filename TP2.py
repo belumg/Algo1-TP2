@@ -1108,6 +1108,14 @@ def autenticar_spotify() -> str:
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
+def obtener_credYT(nombre: str) -> dict:
+    """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
+    diccionario vacío"""
+    if not os.path.isfile("datos_perfiles.json"):
+        return {}
+    with open("datos_perfiles.json") as f:
+        datos = json.load(f)
+    return datos[nombre]["youtube"]
 
 def obtener_refresh_token_perfil(nombre: str) -> str:
     """Devuelve el refresh_token del nombre recibido, si el archivo de donde lo saca no esta entonces devuelve un str vacio."""
@@ -1117,8 +1125,10 @@ def obtener_refresh_token_perfil(nombre: str) -> str:
         datos = json.load(f)
     return datos[nombre]["spotify"]
 
+def conseguir_datos_playlistsYT(youtube: object, id_usuario: str):
+    pass
 
-def conseguir_datos_playlists(spotify, id_usuario):
+def conseguir_datos_playlistsSpotify(spotify, id_usuario):
     """
     Pre: Recibe un objeto spotify (ya con los datos de nuestro perfil elegido) y el id de Spotify del perfil actual.
     Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
@@ -1146,6 +1156,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
     Pre: Recibe un diccionario solo con el nombre del perfil.
     Post: Le agrega datos, como por ejemplo id, playlists, al diccionario recibido.
     """
+    # Spotify:
     refresh_token = obtener_refresh_token_perfil(perfil["username"])
     if refresh_token:
         token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, refresh_token)
@@ -1155,9 +1166,23 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         id_usuario = spotify.current_user().id
         perfil["id_usuario_spotify"] = id_usuario
     if "spotify" in perfil and "id_usuario_spotify" in perfil:
-        datos_playlists: list = conseguir_datos_playlists(perfil["spotify"], perfil["id_usuario_spotify"])
+        datos_playlists: list = conseguir_datos_playlistsSpotify(perfil["spotify"], perfil["id_usuario_spotify"])
         perfil["playlists_spotify"] = datos_playlists
-
+    
+    # Youtube:
+    youtube = validar_permisosYT(perfil["username"])
+    perfil["youtube"] = youtube
+    if "youtube" in perfil:
+        request = youtube.channels().list(
+            part= "id",
+            mine= True
+            )
+        response = request.execute()["items"] # Devuelve una lista con la información del canal.
+        id_YT: str = response[0]["id"]
+        perfil["id_usuario_youtube"] = id_YT
+    if "youtube" in perfil and "id_usuario_youtube" in perfil:
+        datos_playlists: list = conseguir_datos_playlistsYT(perfil["youtube", perfil["id_usuario_youtube"]])
+        perfil["playlists_youtube"] = datos_playlists
 
 def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
     """
@@ -1181,7 +1206,7 @@ def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO IN
 #### ----------------------------- AUTENTICACIÓN YOUTUBE ------------------------------------------
 ###################################################################################################
 
-def validar_permisosYT(usuario: str, youtube: object) -> object:
+def validar_permisosYT(usuario: str) -> object:
     with open("datos_perfiles_YT.json", "r") as f:
         datos: dict = json.load(f)
 
@@ -1190,7 +1215,7 @@ def validar_permisosYT(usuario: str, youtube: object) -> object:
 
     # Recupero los permisos.
     permisos = google.oauth2.credentials.Credentials(
-        token=claves["token"], refresh_token=claves["refresh_token"],  # id_token=id_token,
+        token=claves["token"], refresh_token=claves["refresh_token"],
         token_uri=claves["token_uri"], client_id=claves["client_id"],
         client_secret=claves["client_secret"], scopes=claves["scopes"]
     )
@@ -1278,6 +1303,7 @@ def main() -> None:
     #     'username': str,
     #     'spotify' : object,
     #     'youtube' : object,
+    #     'id_youtube': str,
     #     'playlists_youtube' : list,
     #     'playlists_spotify' : list
     # }
