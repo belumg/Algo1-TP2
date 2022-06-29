@@ -475,8 +475,6 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str) ->
         seleccion = input("Inválido. Vuelva a ingresar >>> ")
     seleccion = int(seleccion)
 
-    print(usuario_actual['playlists_spotify'])
-
     if servidor == "spotify" and seleccion>len(usuario_actual['playlists_spotify']):
         print("Número de playlist ingresado inválido.")
     elif servidor == "youtube" and seleccion>len(usuario_actual['playlists_youtube']):
@@ -626,7 +624,7 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
         for key,value in atributos_track.items():
             atributos_playlist[key] = value / len(detalles_playlist['tracks'])
             print(f"* {key} : {value}")
-        exportar_dict_a_cvs('cvs', usuario_actual['username'], atributos_playlist, f"atributos_playlist_{mi_playlist['info']['id']}")
+        exportar_dict_a_cvs('cvs', usuario_actual['username'], atributos_playlist, f"atributos_playlist_{mi_playlist['id']}")
     else:
         print("No podemos realizar un analisis de atributos musicales para"
               " playlists en youtube.") #Youtube Music API when ??
@@ -668,14 +666,15 @@ def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servid
                 item_n: dict = dict()
                 item_n['id'] = item.id
                 item_n['name'] = item.name
-                item_n['artists'] = []
+                item_n['uri'] = item.uri
                 try:
+                    item_n['artists'] = []
                     item_n['album'] = item.album.name
+                    for artist in item.album.artists:  # artists es lista en model
+                        item_n['artists'].append(artist.name)
                 except AttributeError:
                     item_n['album'] = "Desconocido"
-                item_n['uri'] = item.uri
-                for artist in item.album.artists:  # artists es lista en model
-                    item_n['artists'].append(artist.name)
+                    item_n['artists'] = "Desconocido"
                 resultados.append(item_n)
 
     elif servidor == "youtube":
@@ -734,6 +733,7 @@ def agregar_cancion_a_youtube(playlist_id:str, cancion_id:str, token_youtube:str
         }
     )
     response = request.execute()
+    print(response)
 
 
 def agregar_a_playlist(usuario_actual:dict, cancion:dict, servidor:str) -> None:
@@ -741,10 +741,10 @@ def agregar_a_playlist(usuario_actual:dict, cancion:dict, servidor:str) -> None:
 
     seleccionar_playlist(usuario_actual, mi_playlist, servidor)
 
-    if my_playlist['servidor'] == 'spotify':
-        agregar_cancion_a_spotify(mi_playlist['info']['id'], cancion['uri'], usuario_actual['spotify'])
-    elif my_playlist['servidor'] == 'youtube':
-        agregar_cancion_a_youtube(mi_playlist['info']['id'], cancion['id'], usuario_actual['token_youtube'])
+    if mi_playlist['servidor'] == 'spotify':
+        agregar_cancion_a_spotify(mi_playlist['id'], cancion['uri'], usuario_actual['spotify'])
+    elif mi_playlist['servidor'] == 'youtube':
+        agregar_cancion_a_youtube(mi_playlist['id'], cancion['id'], usuario_actual['token_youtube'])
 
 
 def agregar_cancion_a_spotify(playlist_id:str, uri_cancion:list, token:str) -> None:
@@ -766,7 +766,6 @@ def info_html_de_youtube(cancion:dict) -> None:
         with ydl:
             video = ydl.extract_info(url, download=False)
             if video != {}:
-                info.update(video)
                 track = video['track']
                 artista = video['artist']
             else:
@@ -782,13 +781,20 @@ def info_html_de_youtube(cancion:dict) -> None:
 def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
     nombre = cancion['name']
     artistas: str = ','.join(cancion['artists'])
+
+    vis.mostrar_cancion(cancion, seleccion)
     token_genius: str = ingreso_genius()
     letra: str = extraer_letra(token_genius, nombre, artistas)
-    vis.mostrar_cancion(cancion, seleccion)
-    print(letra)
+    if letra == "":
+        print("No se ha encontrado ninguna letra para esta canción.")
+        print("\n>>> [x] Si quiere buscar la letra por otros medios"
+              "\n>>>Cualquier letra para finalizar")
+    else:
+        print(letra)
+        print("\n>>> [x] Si la letra mostrada es incorrecta y quiere "
+                        "volver a buscarla\n>>>Cualquier letra para finalizar")
 
-    es_la_letra = input("Presione [x] si la letra mostrada es incorrecta y quiere "
-                        "volver a buscarla, \n cualquier letra para finalizar \n >>>   ")
+    es_la_letra = input(" >>>   ")
     if es_la_letra in "xX":
         if servidor == "youtube":
             print("[1] Ingresar nombre manualmente \n"
@@ -825,7 +831,6 @@ def administracion_de_canciones(usuario_actual:dict) -> None:
     if len(resultados) > 0:
         print(f"""\n     Resultados de búsqueda""")
         for i in range(len(resultados)):
-            # vis.mostrar_cancion(resultados[i], i+1)
             if "spotify" in resultados:
                 vis.mostrar_cancion(resultados[i], i+1)
             else:
@@ -838,12 +843,10 @@ def administracion_de_canciones(usuario_actual:dict) -> None:
         accion = input_num_con_control(1,2)
 
         if accion == 1:
-            visualizar_cancion(resultados[seleccion_cancion], seleccion_cancion, servidor)
+            visualizar_cancion(resultados[seleccion_cancion-1], seleccion_cancion, servidor)
         else:
             print("Vamos a elegir una playlist de la lista")
-            servidor: str = playlist_segun_servidor(usuario_actual)
-            if servidor == "unknown":
-                servidor = seleccion_servidor()
+            print_playlists_de_user(usuario_actual, servidor)
             agregar_a_playlist(usuario_actual, resultados[seleccion_cancion], servidor)
     else:
         print("No hemos obtenido ningún resultado de la búsqueda")
@@ -859,6 +862,7 @@ def ingreso_genius()->str:
 
 
 def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
+    ser_o_no_ser: str = "aun no paso nada"
     genius = Genius(token_genius)
     # saca los headers
     genius.remove_section_headers = True
@@ -879,21 +883,22 @@ def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
                   "[s] Si "
                   "[n] No "
                   "[x] dejar de buscar")
-            ser_o_no_ser: str = input(">>> ")
-            if ser_o_no_ser in "sS":
+            ser_o_no_ser = input(">>> ").lower()
+            if ser_o_no_ser == "s":
                 es_cancion = True
-            if ser_o_no_ser in "xX":
+            elif ser_o_no_ser == "x":
                 print("Trabajaremos para mejorar la base de datos de canciones.")
                 es_cancion = True
             else:
                 es_cancion = False
     else:
         song = genius.search_song(cancion, artista)
-    try:
-        letra_song: str = str(song.lyrics)
-    except AttributeError:
-        letra_song: str = ""
 
+    if ser_o_no_ser != "x":
+        try:
+            letra_song: str = str(song.lyrics)
+        except AttributeError:
+            letra_song: str = ""
     return letra_song
 
 
