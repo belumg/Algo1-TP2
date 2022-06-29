@@ -658,14 +658,17 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
             print(f"Se ha creado un archivo con los atributos de la playlist {atributos_playlist['playlist name']} \n"
                   f"en el directorio {os.getcwd()}")
         else:
-            print("Ha habitado un error al generar el archivo. Intentelo nuevamente.")
+            print("Ha habido un error al generar el archivo. Intentelo nuevamente.")
 
     else:
         print("No podemos realizar un analisis de atributos musicales para"
               " playlists en youtube.") #Youtube Music API when ??
-        print("Le ofrecemos:"
-              "[1] Sincronizar esta playlist con spotify y realizar el analisis de las canciones coincidentes.")
-        print("[2] Dar un informe sobre los datos principales de esta playlist al momento.")
+        print("Podemos sincronizar con spotify y realizar el analisis de las canciones que estén en esa plataforma.")
+        sincronizar:str = input("[S] aceptar \nCualquier [Tecla] volver\n     >>>   ").lower()
+        if sincronizar == "s":
+            sincronizacion_youtube_a_spotify()
+            pass #!!! TO-DO
+
 
 
 ### ------------------------ BÚSQUEDA DE CANCIONES ------------------------------------------------
@@ -714,7 +717,6 @@ def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servid
                 except AttributeError:
                     item_n['artists'] = "Desconocido"
                 resultados.append(item_n)
-
     elif servidor == "youtube":
         print("Buscando en youtube...")
         for x in search['items']:  # dict
