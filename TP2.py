@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import cv2 as cv
 import tekore as tk
 from webbrowser import open as web_open
-import de_github_visual as vis
+import TP2_VISUAL as vis
 from tekore import Spotify
 import requests
 from lyricsgenius import Genius
@@ -1028,16 +1028,16 @@ def nuevo_perfil():
         vis.youtube_spotify(True, opciones_elegidas)
         opcion = input_num_con_control(1,3)
         if opcion == 1:
-            pass
-            obj_youtube = autenticarYT(nombre)
-            print(obj_youtube)
-            # opciones_elegidas.append(opcion)
+            obj_youtube = autenticarYT()
+            if obj_youtube:
+                opciones_elegidas.append(opcion)
         elif opcion == 2:
             refresh_token: str = autenticar_spotify()
             if refresh_token:
                 opciones_elegidas.append(opcion)   # REVISAR EL APPEND, QUE PASA SI EL USUARIO USA ESTO 2 VECES
         elif opcion == 3 and opciones_elegidas:
-            guardar_spotify_en_json(nombre, refresh_token)
+            if 1 in opciones_elegidas: guardar_youtube_en_json(nombre, obj_youtube)
+            if 2 in opciones_elegidas: guardar_spotify_en_json(nombre, refresh_token)
             print(vis.DATOS_GUARDADOS)
             terminar: bool = True
         else:
@@ -1114,9 +1114,9 @@ def autenticar_spotify() -> str:
 def obtener_credYT(nombre: str) -> dict:
     """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
     diccionario vacío"""
-    if not os.path.isfile("datos_perfiles_YT.json"):
+    if not os.path.isfile("datos_perfiles.json"):
         return {}
-    with open("datos_perfiles_YT.json") as f:
+    with open("datos_perfiles.json") as f:
         datos = json.load(f)
     return datos[nombre]["youtube"]
 
@@ -1149,7 +1149,7 @@ def conseguir_datos_playlistsSpotify(spotify, id_usuario):
         for cancion in spotify.playlist_items(playlist.id).items:
             canciones.append(cancion.track.name)
         diccionario["tracks"] = canciones
-    """
+        """
         datos.append(diccionario)
     return datos
 
@@ -1173,7 +1173,6 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         perfil["playlists_spotify"] = datos_playlists
     
     # Youtube:
-
     youtube = validar_permisosYT(perfil["username"])
     perfil["youtube"] = youtube
     if "youtube" in perfil:
@@ -1184,11 +1183,9 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         response = request.execute()["items"] # Devuelve una lista con la información del canal.
         id_YT: str = response[0]["id"]
         perfil["id_usuario_youtube"] = id_YT
-    """
     if "youtube" in perfil and "id_usuario_youtube" in perfil:
-        datos_playlists: list = conseguir_datos_playlistsYT(perfil["youtube", perfil["id_usuario_youtube"]])
+        datos_playlists: list = listar_playlistsYT(perfil["youtube"])
         perfil["playlists_youtube"] = datos_playlists
-    """
 
 
 def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
@@ -1264,7 +1261,8 @@ def guardar_youtube_en_json(usuario: str, permisos) -> None:
     escribir_json(datos_existentes, "datos_perfiles_YT.json")
 
 
-def autenticarYT(usuario: str):
+def autenticarYT() -> object:   #REVISAR, DEVUELVE STRING CUANDO FALLA
+    permisos = ""
     scopes = ["https://www.googleapis.com/auth/youtube"]
 
     # Verificación HTTPS OAuthlib activada.
@@ -1281,16 +1279,13 @@ def autenticarYT(usuario: str):
     try:
         permisos = flow.run_console()
     except:
-        print("DATOS INCORRECTOS")
+        print(vis.ERROR_URL)
     else:
         # Creo un cliente API para hacer solicitudes.
         clienteYT: object = googleapiclient.discovery.build(
             api_service_name, api_version, credentials=permisos
-        )
-
-        # Guardo los permisos otorgados.
-        guardar_youtube_en_json(usuario, permisos)
-    return clienteYT
+        )    
+    return permisos
 
 
 def id_canal_youtube(youtube:object) -> None:
@@ -1307,36 +1302,13 @@ def id_canal_youtube(youtube:object) -> None:
 
 
 def main() -> None:
-  
     vis.inicio()
     usuario_actual: dict = {"username": ""}
     manejo_perfiles(usuario_actual)
-
     terminar: bool = True
     if datos_agregados_correctamente(usuario_actual):
         terminar: bool = False
-
-    print(usuario_actual)
-    #########PROVISORIO PARA PROBAR YOUTUBE##############
-    """
-    usuario_actual['token_youtube'] = autenticarYT(usuario_actual['username'])
-    usuario_actual['playlists_youtube'] = listar_playlistsYT(usuario_actual['token_youtube'])
-    usuario_actual['id_usuario_youtube'] = id_canal_youtube(usuario_actual['token_youtube'])
-    """
-
-    # usuario_actual: dict= {
-    #     'username': str,
-    #     'spotify' : object,
-    #     'youtube' : object,
-    #     'id_youtube': str,
-    #     'playlists_youtube' : list,
-    #     'playlists_spotify' : list
-    # }
-
-    ##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
-    """
-    seleccion = 9876543210
-    while seleccion != 0:
+    while not terminar:
         print(vis.MENU)
         seleccion = input_num_con_control(0, 7)
         if seleccion == 1:
@@ -1362,5 +1334,5 @@ def main() -> None:
         elif seleccion == 7:
             #Cambiar de perfil
             manejo_perfiles(usuario_actual)
-    """
+
 main()
