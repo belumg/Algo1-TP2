@@ -894,18 +894,25 @@ def listar_playlistsYT(youtube: object) -> dict:
 
 #### ----------------------------- MANEJO DE PERFILES ----------------------------------------------
 ####################################################################################################
+def escribir_json(datos, nombre_archivo):
+    """Crea, si aun no existe, un archivo json con el nombre y los datos dados por parametro."""
+    with open(nombre_archivo, "w") as f:
+        json.dump(datos, f, indent=3)
+
+def sacar_info_json(nombre_archivo) -> dict:
+    """Devuelve toda la informacion que hay en el archivo json."""
+    with open(nombre_archivo) as f:
+        datos_del_archivo = json.load(f)
+    return datos_del_archivo
+
 def guardar_spotify_en_json(nombre: str, refresh_token: str = "") -> None:
-    """
-    Pre: Recibe un nombre de perfil y el token de Spotify. En caso de que la hubiera,
-    la información sobre el perfil de YouTube se guardó al autenticar.
-    Post: Guarda los datos recibidos en el archivo json que alberga toda la información
-    de los perfiles y sus plataformas.
-    """
-
-    dicc: dict = {nombre: {"spotify": refresh_token}}
-    with open("datos_perfiles.json", "w") as f:
-        json.dump(dicc, f)
-
+    """Guarda los datos recibidos en un archivo json (si no existe, se crea aqui)."""
+    datos_existentes: dict = {}
+    perfil_a_guardar: dict = {nombre: {"spotify": refresh_token}}
+    if os.path.isfile("datos_perfiles.json"):
+        datos_existentes: dict = sacar_info_json("datos_perfiles.json")
+    datos_existentes.update(perfil_a_guardar)
+    escribir_json(datos_existentes, "datos_perfiles.json")
 
 def nombres_perfiles_guardados() -> list:
     """
