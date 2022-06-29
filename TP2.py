@@ -894,16 +894,19 @@ def listar_playlistsYT(youtube: object) -> dict:
 
 #### ----------------------------- MANEJO DE PERFILES ----------------------------------------------
 ####################################################################################################
+
 def escribir_json(datos, nombre_archivo):
     """Crea, si aun no existe, un archivo json con el nombre y los datos dados por parametro."""
     with open(nombre_archivo, "w") as f:
         json.dump(datos, f, indent=3)
+
 
 def sacar_info_json(nombre_archivo) -> dict:
     """Devuelve toda la informacion que hay en el archivo json."""
     with open(nombre_archivo) as f:
         datos_del_archivo = json.load(f)
     return datos_del_archivo
+
 
 def guardar_spotify_en_json(nombre: str, refresh_token: str = "") -> None:
     """Guarda los datos recibidos en un archivo json (si no existe, se crea aqui)."""
@@ -914,23 +917,14 @@ def guardar_spotify_en_json(nombre: str, refresh_token: str = "") -> None:
     datos_existentes.update(perfil_a_guardar)
     escribir_json(datos_existentes, "datos_perfiles.json")
 
+
 def nombres_perfiles_guardados() -> list:
-    """
-    Devuelve, en una lista, los nombres de los perfiles guardados en el archivo csv.
-    Si no encuentra el archivo devuelve una lista vacia.
-    """
-    nombres_perfiles: list = []
-    try:
-        archivo_csv = open("perfiles_datos.csv", newline="", encoding="UTF-8")
-    except FileNotFoundError:
-        return nombres_perfiles
-    else:
-        csv_reader = csv.reader(archivo_csv, delimiter=",")
-        next(csv_reader)
-        for linea in csv_reader:
-            nombres_perfiles.append(linea[0])
-        archivo_csv.close()
-    return nombres_perfiles
+    """Devuelve los nombres que estan el archivo json de los perfiles, si no lo encuentra devuelve una lista vacia."""
+    if not os.path.isfile("datos_perfiles.json"):
+        return []
+    with open("datos_perfiles.json") as f:
+        datos = json.load(f)
+        return list(datos.keys())
 
 
 def nombre_perfil() -> str:
@@ -1037,7 +1031,6 @@ def autenticar_spotify() -> str:
         refresh_token: str = token.refresh_token
         print(vis.DATOS_GUARDADOS)
     return refresh_token
-
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
