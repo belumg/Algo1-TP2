@@ -1182,7 +1182,7 @@ def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO IN
 ###################################################################################################
 
 def validar_permisosYT(usuario: str, youtube: object) -> object:
-    with open("datos_perfiles.json", "r") as f:
+    with open("datos_perfiles_YT.json", "r") as f:
         datos: dict = json.load(f)
 
     # Me guardo las claves que generó el usuario del perfil para YouTube.
@@ -1203,7 +1203,7 @@ def validar_permisosYT(usuario: str, youtube: object) -> object:
 
         # Los guardo en el archivo de credenciales de perfiles.
         dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
-        with open("datos_perfiles.json", "w") as f:
+        with open("datos_perfiles_YT.json", "w") as f:
             json.dump(dicc, f)
 
         # Genero un nuevo cliente de YouTube.
@@ -1241,7 +1241,7 @@ def autenticarYT(usuario: str) -> object:
 
     # Guardo los permisos otorgados.
     dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
-    with open("datos_perfiles.json", "w") as f:
+    with open("datos_perfiles_YT.json", "w") as f:
         json.dump(dicc, f)
 
     return clienteYT

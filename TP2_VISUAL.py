@@ -216,3 +216,13 @@ NO_INTERNET: str = """
        [NO HAY CONEXION A INTERNET]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
+ERROR_URL: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+            [FALTA UN ARCHIVO]
+      Necesitamos el archivo:
+        - "credenciales_SP.py"
+        Sin ese archivo no podemos    
+           ejecutar el software       
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
