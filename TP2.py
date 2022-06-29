@@ -1035,17 +1035,13 @@ def autenticar_spotify() -> str:
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
 
-def datos_por_indice(indice: int) -> list:
-    """
-    Pre: Recibe un indice que nos dice en donde se encuentra el perfil del que debemos sacar informacion.
-    Post: Revisa el archivo de los perfiles, va hacia ese indice y luego devuelve una lista con los datos.
-    """
-    archivo_csv = open("perfiles_datos.csv", newline="", encoding="UTF-8")
-    csv_reader = csv.reader(archivo_csv, delimiter=",")                     # FALTA UN TRY/EXCEPT?
-    for x in range(indice+1):
-        next(csv_reader)
-    datos: list = next(csv_reader)
-    return datos
+def obtener_refresh_token_perfil(nombre: str) -> str:
+    """Devuelve el refresh_token del nombre recibido, si el archivo de donde lo saca no esta entonces devuelve un str vacio."""
+    if not os.path.isfile("datos_perfiles.json"):
+        return ""
+    with open("datos_perfiles.json") as f:
+        datos = json.load(f)
+    return datos[nombre]["spotify"]
 
 
 def conseguir_datos_playlists(spotify, id_usuario):
@@ -1076,11 +1072,9 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
     Pre: Recibe un diccionario solo con el nombre del perfil.
     Post: Le agrega datos, como por ejemplo id, playlists, al diccionario recibido.
     """
-    nombres_usados: list = nombres_perfiles_guardados()
-    indice_datos: int = nombres_usados.index(perfil["username"])
-    datos_perfil: list = datos_por_indice(indice_datos)
-    if datos_perfil[1]:
-        token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, datos_perfil[1])
+    refresh_token = obtener_refresh_token_perfil(perfil["username"])
+    if refresh_token:
+        token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, refresh_token)
         spotify = tk.Spotify(token)
         perfil["spotify"] = spotify
     if "spotify" in perfil:
@@ -1091,21 +1085,21 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         perfil["playlists_spotify"] = datos_playlists
 
 
-def datos_agregados_correctamente(perfil: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
+def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
     """
     Pre: Recibe un diccionario con los datos del perfil actual.
     Post: Devuelve un False si encuentra que falta un dato importante.
     """
-    if not perfil["username"]:
+    if not usuario_actual["username"]:
         return False
-    datos_necesarios_perfil(perfil)
-    if "spotify" not in perfil:
+    datos_necesarios_perfil(usuario_actual)
+    if "spotify" not in usuario_actual:
         return False
-    elif "id_usuario_spotify" not in perfil:
+    elif "id_usuario_spotify" not in usuario_actual:
         return False
-    elif "playlists_spotify" not in perfil:
+    elif "playlists_spotify" not in usuario_actual:
         return False
-    elif "playlists_youtube" not in perfil:
+    elif "playlists_youtube" not in usuario_actual:
         return False
     return True
 
