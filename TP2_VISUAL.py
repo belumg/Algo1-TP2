@@ -28,12 +28,14 @@ def inicio() -> None:
 def menu_perfiles(perfil: str) -> None:
     """
     Pre: Recibe un string, si esta vacio entonces el usuario aun no eligio un perfil.
-    Post: Imprime un menu con 3 opciones (perfil guardado, ingresar perfil, salir o volver al menu).
+    Post: Imprime un menu con 3 opciones (perfil guardado/otro perfil, ingresar perfil, salir/ir menu perfil).
     """
     if not perfil:
-        mensaje: str = "Terminar el programa."
+        mensaje_seleccionar: str = "Seleccionar perfil guardado"
+        mensaje: str = "Terminar el programa"
         mensaje_perfil: str = "Aun no eligio un perfil"
     else:
+        mensaje_seleccionar: str = "Elegir otro perfil"
         mensaje: str = "Ingresar al menu de perfil"
         mensaje_perfil: str = perfil
 
@@ -42,11 +44,15 @@ def menu_perfiles(perfil: str) -> None:
                 █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
                 ██─█▄█─███─▄█▀██─█▄▀─███─██─██
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
+
          ╔══════════════════════════════════════════╗
-          [1] Seleccionar perfil guardado.                  Perfil actual:                   
-          [2] Ingresar nuevo perfil.                        - {mensaje_perfil}
-          
+                                                            
+          [1] {mensaje_seleccionar}                                    
+                                                            Perfil elegido:
+          [2] Ingresar perfil.                              - {mensaje_perfil}
+
           [3] {mensaje}
+
          ╚══════════════════════════════════════════╝  
     """)
 
