@@ -1029,7 +1029,7 @@ def nuevo_perfil():
         opcion = input_num_con_control(1,3)
         if opcion == 1:
             pass
-            # obj_youtube = autenticarYT()
+            # obj_youtube = autenticarYT(nombre)
             # opciones_elegidas.append(opcion)
         elif opcion == 2:
             refresh_token: str = autenticar_spotify()
@@ -1182,9 +1182,11 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         response = request.execute()["items"] # Devuelve una lista con la información del canal.
         id_YT: str = response[0]["id"]
         perfil["id_usuario_youtube"] = id_YT
+    """
     if "youtube" in perfil and "id_usuario_youtube" in perfil:
         datos_playlists: list = conseguir_datos_playlistsYT(perfil["youtube", perfil["id_usuario_youtube"]])
         perfil["playlists_youtube"] = datos_playlists
+    """
 
 def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
     """
@@ -1249,6 +1251,16 @@ def validar_permisosYT(usuario: str) -> object:
         return youtube
 
 
+def guardar_youtube_en_json(usuario: str, permisos) -> None:
+    """Guarda los datos recibidos en un archivo json (si no existe, se crea aqui)."""
+    datos_existentes: dict = {}
+    dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
+    if os.path.isfile("datos_perfiles_YT.json"):
+        datos_existentes: dict = sacar_info_json("datos_perfiles_YT.json")
+    datos_existentes.update(dicc)
+    escribir_json(datos_existentes, "datos_perfiles_YT.json")
+
+
 def autenticarYT(usuario: str) -> object:
     scopes = ["https://www.googleapis.com/auth/youtube"]
 
@@ -1271,9 +1283,7 @@ def autenticarYT(usuario: str) -> object:
     )
 
     # Guardo los permisos otorgados.
-    dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
-    with open("datos_perfiles_YT.json", "w") as f:
-        json.dump(dicc, f)
+    guardar_youtube_en_json(usuario, permisos)
 
     return clienteYT
 
@@ -1300,10 +1310,13 @@ def main() -> None:
     if datos_agregados_correctamente(usuario_actual):
         terminar: bool = False
 
+
     #########PROVISORIO PARA PROBAR YOUTUBE##############
+
     usuario_actual['token_youtube'] = autenticarYT(usuario_actual['username'])
     usuario_actual['playlists_youtube'] = listar_playlistsYT(usuario_actual['token_youtube'])
     usuario_actual['id_usuario_youtube'] = id_canal_youtube(usuario_actual['token_youtube'])
+    
 
     # usuario_actual: dict= {
     #     'username': str,
@@ -1343,5 +1356,7 @@ def main() -> None:
         elif seleccion == 7:
             #Cambiar de perfil
             manejo_perfiles(usuario_actual)
+
+
 
 main()
