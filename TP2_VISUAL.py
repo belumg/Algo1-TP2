@@ -217,7 +217,7 @@ NO_INTERNET: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-ERROR_URL: str = """
+FALTA_ARCHIVO: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
             [FALTA UN ARCHIVO]
       Necesitamos el archivo:
