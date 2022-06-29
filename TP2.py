@@ -1200,6 +1200,10 @@ def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO IN
         return False
     elif "playlists_spotify" not in usuario_actual:
         return False
+    elif "youtube" not in usuario_actual:
+        return False
+    elif "id_usuario_youtube" not in usuario_actual:
+        return False
     elif "playlists_youtube" not in usuario_actual:
         return False
     return True
