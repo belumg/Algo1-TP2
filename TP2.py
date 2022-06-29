@@ -481,10 +481,6 @@ def comprobar_permisos(usuario_actual:dict, servidor:str, seleccion:int) -> bool
 
 
 def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, permisos:bool = False) -> None:
-    print("Playlists de spotify: ")
-    print(usuario_actual['playlists_spotify'])
-    print("Playlists de youtube: ")
-    print(usuario_actual['playlists_youtube'])
     permitido : bool = False
     print("Seleccione una playlist ")
     seleccion = input("    >>> ")
@@ -694,24 +690,18 @@ def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servid
                 item_n['uri'] = item.uri
                 try:
                     item_n['artists'] = []
-                    item_n['album'] = item.album.name
                     for artist in item.album.artists:  # artists es lista en model
                         item_n['artists'].append(artist.name)
                 except AttributeError:
                     item_n['album'] = "Desconocido"
+                try:
+                    item_n['album'] = item.album.name
+                except AttributeError:
                     item_n['artists'] = "Desconocido"
                 resultados.append(item_n)
 
     elif servidor == "youtube":
         print("Buscando en youtube...")
-        # datos_parseados = limpieza_yutub(search)
-        # for x in datos_parseados:  # dict
-        #     item_n: dict = dict()
-        #     item_n['id'] = x[0]
-        #     item_n['name'] = x[1]
-        #     item_n['artists'] = x[2]
-        #     item_n['album'] = "unknown"
-        #     resultados.append(item_n)
         for x in search['items']:  # dict
             item_n: dict = dict()
             item_n['id'] = x['id']['videoId']
