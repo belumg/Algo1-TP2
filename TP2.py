@@ -572,7 +572,7 @@ def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, pla
 
         normalizar_playlist_spotify(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
     elif servidor == "youtube":
-        # !!! to-do!!!
+        """ # !!! to-do!!!
         # ver cuando una playlist tiene +50 elementos
         youtube = token_youtube
         request = youtube.playlistItems().list(
@@ -580,7 +580,29 @@ def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, pla
             maxResults=50,
             playlistId=playlist_id
         )
-        response = request.execute()
+        response = request.execute() """
+        youtube: object = token_youtube
+        response = youtube.playlistItems().list(
+                    part="snippet",
+                    playlistId=playlist_id,
+                    maxResults="50"
+                    ).execute()
+
+        nextPageToken = response.get("nextPageToken")
+        while ("nextPageToken" in response):
+            nextPage = youtube.playlistItems().list(
+                            part="snippet",
+                            playlistId=playlist_id,
+                            maxResults="50",
+                            pageToken=nextPageToken
+                            ).execute()
+            response["items"] = response["items"] + nextPage["items"]
+
+            if "nextPageToken" not in nextPage:
+                response.pop("nextPageToken", None)
+            else:
+                nextPageToken = nextPage["nextPageToken"]
+        
         for item in response['items']: #lista de dicts
             info_playlist.append(item)
         normalizar_playlist_youtube(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
@@ -1367,7 +1389,7 @@ def main() -> None:
                 administracion_de_canciones(usuario_actual)
             elif seleccion == 5:
                 #Sincronizar playlists
-                spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'],
+                spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'],
                                 usuario_actual['id_usuario_spotify'], usuario_actual['id_usuario_youtube'])
             elif seleccion == 6:
                 #Generar wordcloud
