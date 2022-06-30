@@ -967,6 +967,7 @@ def rejunte_letras(detalles: dict) -> str:
 
 
 def playlists_spotify(spotify, id_usuario) -> None:
+    """ Recupera la información de las playlists de Spotify de un usuario """
     datos_playlists = spotify.playlists(id_usuario)
     nombres = [x.name for x in datos_playlists.items]
     if nombres:
@@ -976,6 +977,7 @@ def playlists_spotify(spotify, id_usuario) -> None:
 
 
 def listar_playlistsYT(youtube: object) -> dict:
+    """ Recupera la data de todas las playlists que tiene un usuario en Youtube """
     request = youtube.playlists().list(
                     part="snippet,id,status",
                     maxResults=50,
@@ -1170,6 +1172,8 @@ def obtener_refresh_token_perfil(nombre: str) -> str:
     return datos[nombre]["spotify"]
 
 def conseguir_datos_playlistsYT(youtube: object) -> list:
+    """ Consigue el id, nombre, descripción y estado (publica o privada) de todas las playlists 
+    del usuario para el que se haya solicitado """
     lista_dicc_playlistsYT: list = []
     data_response: dict = listar_playlistsYT(youtube)
     for i in range(len(data_response)):
@@ -1204,7 +1208,7 @@ def conseguir_datos_playlistsSpotify(spotify, id_usuario):
     return datos
 
 
-def datos_necesarios_perfil(perfil: dict, credenciales_SP: tuple) -> None:  # NECESITO INFORMACION DE YOUTUBE
+def datos_necesarios_perfil(perfil: dict, credenciales_SP: tuple) -> None:
     """
     Pre: Recibe un diccionario solo con el nombre del perfil.
     Post: Le agrega datos, como por ejemplo id, playlists, al diccionario recibido.
@@ -1267,7 +1271,8 @@ def datos_agregados_correctamente(usuario_actual: dict, credenciales_SP: tuple) 
 ###################################################################################################
 
 def validar_permisosYT(usuario: str) -> object:
-
+    """ Corroborora que las credenciales para hacer solicitdudes a la API estén vigente.
+    En caso de que no lo estén, solicita nuevas y genera un nuevo cliente. """
     datos: dict = sacar_info_json("datos_perfiles_YT.json")
 
     # Me guardo las claves que generó el usuario del perfil para YouTube.
@@ -1313,6 +1318,7 @@ def guardar_youtube_en_json(usuario: str, permisos) -> None:
 
 
 def autenticarYT() -> object:   #REVISAR, DEVUELVE STRING CUANDO FALLA
+    """ Autentica a un determinado usuario en la plataforma Youtube """
     permisos = ""
     scopes = ["https://www.googleapis.com/auth/youtube"]
 
@@ -1340,6 +1346,7 @@ def autenticarYT() -> object:   #REVISAR, DEVUELVE STRING CUANDO FALLA
 
 
 def id_canal_youtube(youtube:object) -> None:
+    """ Retorna el identificador de un canal de Youtube (ID) """
     request = youtube.channels().list(
             part= "id",
             mine= True
@@ -1363,6 +1370,7 @@ def estan_archivos():
 
 
 def conseguir_credenciales_spotify() -> tuple:
+    """ Recupera las credenciales para autenticarse en Spotify """
     with open("credenciales_SP.json") as f:
         datos = json.load(f)
     return tuple(datos.values())
