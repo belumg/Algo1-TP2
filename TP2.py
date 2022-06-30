@@ -1034,7 +1034,11 @@ def nuevo_perfil():
         elif opcion == 2:
             refresh_token: str = autenticar_spotify()
             if refresh_token:
-                opciones_elegidas.append(opcion)   # REVISAR EL APPEND, QUE PASA SI EL USUARIO USA ESTO 2 VECES
+                opciones_elegidas.append(opcion)
+        elif opcion == 3 and opciones_elegidas and (1 not in opciones_elegidas or 2 not in opciones_elegidas):
+            if 1 not in opciones_elegidas: falta: str = "Youtube"
+            else: falta: str = "Spotify"
+            vis.falta_plataforma(falta)
         elif opcion == 3 and opciones_elegidas:
             if 1 in opciones_elegidas: guardar_youtube_en_json(nombre, obj_youtube)
             if 2 in opciones_elegidas: guardar_spotify_en_json(nombre, refresh_token)
@@ -1075,7 +1079,6 @@ def manejo_perfiles(perfil: dict):
     terminar: bool = False
     while not terminar:
         vis.menu_perfiles(perfil["username"])
-        # opcion: int = opciones([1, 2, 3])
         opcion = input_num_con_control(1,3)
         if opcion == 1:
             perfil_elegido: str = elegir_perfil(perfil)                             # EN REVISION
@@ -1309,6 +1312,7 @@ def main() -> None:
     terminar: bool = True
     if datos_agregados_correctamente(usuario_actual):
         terminar: bool = False
+    print(usuario_actual)
     while not terminar:
         print(vis.MENU)
         seleccion = input_num_con_control(0, 7)
