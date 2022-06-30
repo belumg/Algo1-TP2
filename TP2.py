@@ -1110,14 +1110,6 @@ def autenticar_spotify() -> str:
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
-def obtener_credYT(nombre: str) -> dict:
-    """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
-    diccionario vacío"""
-    if not os.path.isfile("datos_perfiles.json"):
-        return {}
-    with open("datos_perfiles.json") as f:
-        datos = json.load(f)
-    return datos[nombre]["youtube"]
 
 def obtener_refresh_token_perfil(nombre: str) -> str:
     """Devuelve el refresh_token del nombre recibido, si el archivo de donde lo saca no esta entonces devuelve un str vacio."""
@@ -1127,8 +1119,18 @@ def obtener_refresh_token_perfil(nombre: str) -> str:
         datos = json.load(f)
     return datos[nombre]["spotify"]
 
-def conseguir_datos_playlistsYT(youtube: object, id_usuario: str):
-    pass
+def conseguir_datos_playlistsYT(youtube: object) -> list:
+    lista_dicc_playlistsYT: list = []
+    data_response: dict = listar_playlistsYT(youtube)
+    for i in range(len(data_response)):
+        diccionario: dict = {}
+        diccionario["name"] = data_response[0]["snippet"]["title"]
+        diccionario["id"] = data_response[0]["snippet"]["id"]
+        diccionario["collaborative"] = data_response[0]["status"]["privacyStatus"]
+        diccionario["description"] = data_response[0]["snippet"]["description"]
+        lista_dicc_playlistsYT.append(diccionario)
+    return lista_dicc_playlistsYT
+
 
 def conseguir_datos_playlistsSpotify(spotify, id_usuario):
     """
@@ -1182,11 +1184,10 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         response = request.execute()["items"] # Devuelve una lista con la información del canal.
         id_YT: str = response[0]["id"]
         perfil["id_usuario_youtube"] = id_YT
-    """
     if "youtube" in perfil and "id_usuario_youtube" in perfil:
-        datos_playlists: list = conseguir_datos_playlistsYT(perfil["youtube", perfil["id_usuario_youtube"]])
+        datos_playlists: list = conseguir_datos_playlistsYT(perfil["youtube"])
         perfil["playlists_youtube"] = datos_playlists
-    """
+    
 
 def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
     """
