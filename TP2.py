@@ -1302,7 +1302,7 @@ def main() -> None:
     terminar: bool = True
     if datos_agregados_correctamente(usuario_actual):
         terminar: bool = False
-    print(usuario_actual)
+    #print(usuario_actual)
     while not terminar:
         print(vis.MENU)
         seleccion = input_num_con_control(0, 7)
