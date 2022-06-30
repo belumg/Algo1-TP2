@@ -52,19 +52,32 @@ Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodid
 ### Requerimientos.
 
  Autenticación de Spotify:
+
 -Presione Enter cuando se lo indique.
+
 -Se abrirá automáticamente una pestaña en el navegador determinado.
+
 -Por favor ingrese a su cuenta y acepte permisos.
+
 -La ventana mostrará un mensaje de error, no se asuste, copie el url de la página.
+
 -Proceda a pegar el url en el programa principal.
+
 -Aparecerá un cartel con la validación de su autenticación.
 
+
  Autenticación de Youtube.
+
 -Presione el link que le aparecerá en pantalla.
+
 -Ingrese a su cuenta y acepte los permisos.
+
 -Se le dará un código, cópielo.
+
 -Proceda a pegar el código en el programa `principal.
+
 -Aparecerá un cartel con la validación de su autenticación.
+
 
 ### Bugs.
 
