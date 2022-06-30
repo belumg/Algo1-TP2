@@ -1247,7 +1247,7 @@ def datos_agregados_correctamente(usuario_actual: dict, credenciales_SP: tuple) 
     """
     if not usuario_actual["username"]:
         return False
-    datos_necesarios_perfil(usuario_actual)
+    datos_necesarios_perfil(usuario_actual, credenciales_SP)
     if "spotify" not in usuario_actual:
         return False
     elif "id_usuario_spotify" not in usuario_actual:
