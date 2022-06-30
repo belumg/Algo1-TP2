@@ -1169,8 +1169,17 @@ def obtener_refresh_token_perfil(nombre: str) -> str:
         datos = json.load(f)
     return datos[nombre]["spotify"]
 
-def conseguir_datos_playlistsYT(youtube: object, id_usuario: str):
-    pass
+def conseguir_datos_playlistsYT(youtube: object) -> list:
+    lista_dicc_playlistsYT: list = []
+    data_response: dict = listar_playlistsYT(youtube)
+    for i in range(len(data_response)):
+        diccionario: dict = {}
+        diccionario["name"] = data_response[0]["snippet"]["title"]
+        diccionario["id"] = data_response[0]["snippet"]["id"]
+        diccionario["collaborative"] = data_response[0]["status"]["privacyStatus"]
+        diccionario["description"] = data_response[0]["snippet"]["description"]
+        lista_dicc_playlistsYT.append(diccionario)
+    return lista_dicc_playlistsYT
 
 def conseguir_datos_playlistsSpotify(spotify, id_usuario):
     """
@@ -1238,7 +1247,7 @@ def datos_agregados_correctamente(usuario_actual: dict, credenciales_SP: tuple) 
     """
     if not usuario_actual["username"]:
         return False
-    datos_necesarios_perfil(usuario_actual, credenciales_SP)
+    datos_necesarios_perfil(usuario_actual)
     if "spotify" not in usuario_actual:
         return False
     elif "id_usuario_spotify" not in usuario_actual:
