@@ -455,8 +455,11 @@ def crear_playlist(user_id: str, spotify: object, token_youtube: object)->None:
 
 def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
     lista_nombres: list = list()
-    for playlist in usuario_actual[f'playlists_{servidor}']:
-        lista_nombres.append(playlist['name'])
+    if (len(usuario_actual[f'playlists_{servidor}']) == 0):
+        lista_nombres.append("No hay ninguna lista para mostrar")
+    else:
+        for playlist in usuario_actual[f'playlists_{servidor}']:
+            lista_nombres.append(playlist['name'])
     vis.visual_lista_elementos(lista_nombres, f"Playlists de {servidor}", True)
 
 def playlist_segun_servidor(usuario_actual: dict) -> str:
@@ -1028,15 +1031,20 @@ def nuevo_perfil():
         vis.youtube_spotify(True, opciones_elegidas)
         opcion = input_num_con_control(1,3)
         if opcion == 1:
-            pass
-            # obj_youtube = autenticarYT(nombre)
-            # opciones_elegidas.append(opcion)
+            obj_youtube = autenticarYT()
+            if obj_youtube:
+                opciones_elegidas.append(opcion)
         elif opcion == 2:
             refresh_token: str = autenticar_spotify()
             if refresh_token:
-                opciones_elegidas.append(opcion)   # REVISAR EL APPEND, QUE PASA SI EL USUARIO USA ESTO 2 VECES
+                opciones_elegidas.append(opcion)
+        elif opcion == 3 and opciones_elegidas and (1 not in opciones_elegidas or 2 not in opciones_elegidas):
+            if 1 not in opciones_elegidas: falta: str = "Youtube"
+            else: falta: str = "Spotify"
+            vis.falta_plataforma(falta)
         elif opcion == 3 and opciones_elegidas:
-            guardar_spotify_en_json(nombre, refresh_token)
+            if 1 in opciones_elegidas: guardar_youtube_en_json(nombre, obj_youtube)
+            if 2 in opciones_elegidas: guardar_spotify_en_json(nombre, refresh_token)
             print(vis.DATOS_GUARDADOS)
             terminar: bool = True
         else:
@@ -1074,7 +1082,6 @@ def manejo_perfiles(perfil: dict):
     terminar: bool = False
     while not terminar:
         vis.menu_perfiles(perfil["username"])
-        # opcion: int = opciones([1, 2, 3])
         opcion = input_num_con_control(1,3)
         if opcion == 1:
             perfil_elegido: str = elegir_perfil(perfil)                             # EN REVISION
@@ -1101,7 +1108,7 @@ def autenticar_spotify() -> str:
     url: str = input("--->  ").strip()
     try:
         token: tk.RefreshingToken = auth.request_token(url=url)
-    except:
+    except KeyError:
         print(vis.ERROR_URL)
     else:
         refresh_token: str = token.refresh_token
@@ -1110,6 +1117,14 @@ def autenticar_spotify() -> str:
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
+def obtener_credYT(nombre: str) -> dict:
+    """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
+    diccionario vacío"""
+    if not os.path.isfile("datos_perfiles.json"):
+        return {}
+    with open("datos_perfiles.json") as f:
+        datos = json.load(f)
+    return datos[nombre]["youtube"]
 
 def obtener_refresh_token_perfil(nombre: str) -> str:
     """Devuelve el refresh_token del nombre recibido, si el archivo de donde lo saca no esta entonces devuelve un str vacio."""
@@ -1119,18 +1134,8 @@ def obtener_refresh_token_perfil(nombre: str) -> str:
         datos = json.load(f)
     return datos[nombre]["spotify"]
 
-def conseguir_datos_playlistsYT(youtube: object) -> list:
-    lista_dicc_playlistsYT: list = []
-    data_response: dict = listar_playlistsYT(youtube)
-    for i in range(len(data_response)):
-        diccionario: dict = {}
-        diccionario["name"] = data_response[0]["snippet"]["title"]
-        diccionario["id"] = data_response[0]["snippet"]["id"]
-        diccionario["collaborative"] = data_response[0]["status"]["privacyStatus"]
-        diccionario["description"] = data_response[0]["snippet"]["description"]
-        lista_dicc_playlistsYT.append(diccionario)
-    return lista_dicc_playlistsYT
-
+def conseguir_datos_playlistsYT(youtube: object, id_usuario: str):
+    pass
 
 def conseguir_datos_playlistsSpotify(spotify, id_usuario):
     """
@@ -1163,6 +1168,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
     # Spotify:
     refresh_token = obtener_refresh_token_perfil(perfil["username"])
     if refresh_token:
+        print("Consiguiendo datos de Spotify...")
         token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, refresh_token)
         spotify = tk.Spotify(token)
         perfil["spotify"] = spotify
@@ -1174,6 +1180,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         perfil["playlists_spotify"] = datos_playlists
     
     # Youtube:
+    print("Consiguiendo datos de Youtube...")
     youtube = validar_permisosYT(perfil["username"])
     perfil["youtube"] = youtube
     if "youtube" in perfil:
@@ -1185,11 +1192,11 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         id_YT: str = response[0]["id"]
         perfil["id_usuario_youtube"] = id_YT
     if "youtube" in perfil and "id_usuario_youtube" in perfil:
-        datos_playlists: list = conseguir_datos_playlistsYT(perfil["youtube"])
+        datos_playlists: list = listar_playlistsYT(perfil["youtube"])
         perfil["playlists_youtube"] = datos_playlists
-    
 
-def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO INFORMACION DE YOUTUBE
+
+def datos_agregados_correctamente(usuario_actual: dict) -> bool:
     """
     Pre: Recibe un diccionario con los datos del perfil actual.
     Post: Devuelve un False si encuentra que falta un dato importante.
@@ -1216,8 +1223,8 @@ def datos_agregados_correctamente(usuario_actual: dict) -> bool:   # NECESITO IN
 ###################################################################################################
 
 def validar_permisosYT(usuario: str) -> object:
-    with open("datos_perfiles_YT.json", "r") as f:
-        datos: dict = json.load(f)
+
+    datos: dict = sacar_info_json("datos_perfiles_YT.json")
 
     # Me guardo las claves que generó el usuario del perfil para YouTube.
     claves: dict = datos[usuario]["youtube"]
@@ -1236,9 +1243,8 @@ def validar_permisosYT(usuario: str) -> object:
         permisos.refresh(solicitar)
 
         # Los guardo en el archivo de credenciales de perfiles.
-        dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
-        with open("datos_perfiles_YT.json", "w") as f:
-            json.dump(dicc, f)
+        datos[usuario]["youtube"] = json.loads(permisos.to_json())
+        escribir_json(datos, "datos_perfiles_YT.json")
 
         # Genero un nuevo cliente de YouTube.
         api_service_name: str = "youtube"
@@ -1262,7 +1268,8 @@ def guardar_youtube_en_json(usuario: str, permisos) -> None:
     escribir_json(datos_existentes, "datos_perfiles_YT.json")
 
 
-def autenticarYT(usuario: str) -> object:
+def autenticarYT() -> object:   #REVISAR, DEVUELVE STRING CUANDO FALLA
+    permisos = ""
     scopes = ["https://www.googleapis.com/auth/youtube"]
 
     # Verificación HTTPS OAuthlib activada.
@@ -1276,17 +1283,17 @@ def autenticarYT(usuario: str) -> object:
     flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
         client_secrets_file, scopes
     )
-    permisos = flow.run_console()
+    try:
+        permisos = flow.run_console()
+    except:
+        print(vis.ERROR_URL)
+    else:
+        # Creo un cliente API para hacer solicitudes.
+        clienteYT: object = googleapiclient.discovery.build(
+            api_service_name, api_version, credentials=permisos
+        )    
+    return permisos
 
-    # Creo un cliente API para hacer solicitudes.
-    clienteYT: object = googleapiclient.discovery.build(
-        api_service_name, api_version, credentials=permisos
-    )
-
-    # Guardo los permisos otorgados.
-    guardar_youtube_en_json(usuario, permisos)
-
-    return clienteYT
 
 def id_canal_youtube(youtube:object) -> None:
     request = youtube.channels().list(
@@ -1302,36 +1309,14 @@ def id_canal_youtube(youtube:object) -> None:
 
 
 def main() -> None:
-  
     vis.inicio()
     usuario_actual: dict = {"username": ""}
     manejo_perfiles(usuario_actual)
-
     terminar: bool = True
     if datos_agregados_correctamente(usuario_actual):
         terminar: bool = False
-
-
-    #########PROVISORIO PARA PROBAR YOUTUBE##############
-
-    usuario_actual['token_youtube'] = autenticarYT(usuario_actual['username'])
-    usuario_actual['playlists_youtube'] = listar_playlistsYT(usuario_actual['token_youtube'])
-    usuario_actual['id_usuario_youtube'] = id_canal_youtube(usuario_actual['token_youtube'])
-    
-
-    # usuario_actual: dict= {
-    #     'username': str,
-    #     'spotify' : object,
-    #     'youtube' : object,
-    #     'id_youtube': str,
-    #     'playlists_youtube' : list,
-    #     'playlists_spotify' : list
-    # }
-
-    ##### --------MENU PRINCIPAL DENTRO DEL PERFIL--------------------------
-
-    seleccion = 9876543210
-    while seleccion != 0:
+    #print(usuario_actual)
+    while not terminar:
         print(vis.MENU)
         seleccion = input_num_con_control(0, 7)
         if seleccion == 1:
@@ -1357,7 +1342,7 @@ def main() -> None:
         elif seleccion == 7:
             #Cambiar de perfil
             manejo_perfiles(usuario_actual)
-
-
+        else:
+            terminar: bool = True
 
 main()
