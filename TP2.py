@@ -1101,7 +1101,7 @@ def autenticar_spotify() -> str:
     url: str = input("--->  ").strip()
     try:
         token: tk.RefreshingToken = auth.request_token(url=url)
-    except KeyError:
+    except:
         print(vis.ERROR_URL)
     else:
         refresh_token: str = token.refresh_token
