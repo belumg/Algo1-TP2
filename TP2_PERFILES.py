@@ -6,7 +6,7 @@ from webbrowser import open as web_open
 import tekore as tk
 import os
 import json
-import de_github_visual as vis
+import TP2_VISUAL as vis
 
 ####################################################################################################
 ####################################################################################################
