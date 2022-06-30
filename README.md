@@ -54,3 +54,4 @@ Los problemas se arreglarán en la versión 1.0.0, el 07/07/2022.
 * Si se crea una playlist en el transcurso del programa, el diccionario que contiene la información no lo recibe por lo que no aparece en las opciones. 
 * El wordcloud no da buenos resultados para otro idioma que no sea en ingles, esto es debido a la implementación de json por la longitud de las listas. Se pensó en dos soluciones, utilizar una librería de wordcloud o realizar el conteo de cantidad de repeticiones de la letra a mano para solo mandarle las repetidas con la cantidad de veces que se repitio en un texto más pequeño.
 * Sólo imprime 20 listas, si el usuario posee más no se podrán ver en pantalla.
+* Si la lista tiene un caracter especial se rompe.
