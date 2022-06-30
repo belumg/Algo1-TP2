@@ -9,7 +9,7 @@ En el programa realizado se trabajó con las APIs de Youtube y Spotify. Se pidi�
 * Camila Abigail Solari
 
 
-### Librerías utilizadas :
+## Librerías utilizadas :
 -Tekore https://tekore.readthedocs.io/en/stable/
 
 -Youtube_dl  https://github.com/ytdl-org/youtube-dl
@@ -25,7 +25,7 @@ En el programa realizado se trabajó con las APIs de Youtube y Spotify. Se pidi�
 -QuickChart Word Cloud API https://quickchart.io/documentation/word-cloud-api/
 
 
-### Otros modulos que será necesario importar:
+## Otros modulos que será necesario importar:
 -opencv-python 
 
 -csv
@@ -41,7 +41,7 @@ En el programa realizado se trabajó con las APIs de Youtube y Spotify. Se pidi�
 -json
 
 
-### Descripción de la Aplicación:
+## Descripción de la Aplicación:
 
 La aplicación consta de varios puntos.
 El menú conduce a cada una de las funciones, además de la posibilidad de un manejo efectivo de varios usuarios en el programa.
@@ -49,9 +49,9 @@ Se inicia con la autenticación, proceso por el cual cedemos nuestros permisos p
 Las siguientes funciones van desde el listado de las playlists hasta la posibilidad de pasar los datos de una plataforma a la otra. Estas dependen de la autenticación correcta y un ‘token’ valido.
 Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodidad del usuario, en su mayoría las acciones se expresan como menu de opciones.
 
-### Requerimientos.
+## Requerimientos.
 
- Autenticación de Spotify:
+### Autenticación de Spotify:
 
 -Presione Enter cuando se lo indique.
 
@@ -66,7 +66,7 @@ Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodid
 -Aparecerá un cartel con la validación de su autenticación.
 
 
- Autenticación de Youtube.
+### Autenticación de Youtube.
 
 -Presione el link que le aparecerá en pantalla.
 
@@ -79,7 +79,7 @@ Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodid
 -Aparecerá un cartel con la validación de su autenticación.
 
 
-### Bugs.
+## Bugs.
 
 Los problemas están proyectados arreglarse en la versión 1.0.0
 * Varias aplicaciones al requerir el uso de playlists de Youtube y de Spotify poseen un error al llamar a una lista ya creada pero de contenido nulo. Para evitar que el código “rompa” se procedió a ingresar un Try/Except.
