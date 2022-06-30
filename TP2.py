@@ -153,15 +153,19 @@ def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: objec
         no_se_pudo: dict = sincronizacion_youtube_a_spotify(usuario_actual, playlist_spotifai, detalles_spotifai,
                                        token_yutub, user_id_spotifai,  playlist_yutub,
                                          detalles_yutub, spotify)
-    exportar_dict_a_cvs("csv", usuario_actual['name'], no_se_pudo, "no se pudo")
+    if len(no_se_pudo['no se pudo']) != 0:
+        exportar_dict_a_cvs("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
+    else:
+        print("HABEMUS UN GANADOR, USTED PASO TODAS SUS CANCIONES CORRECTAMENTE")
 
 
 def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombre: str, servicio: str)->str:
+    playlist_id: str =""
     if servicio=="spotify":
         playlist = spotify.playlists(user_id, limit=50)
         for i in range(len(playlist.items)):
             if playlist.items[i].name == nombre:
-                playlist_id: str = playlist.items[i].id
+                playlist_id = playlist.items[i].id
 
     elif servicio=="youtube":
         youtube=token_youtube
@@ -173,7 +177,7 @@ def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombr
         print(response)
         for i in response['items']:
             if i['snippet']['title'] == nombre:
-                playlist_id: str = i['id']
+                playlist_id = i['id']
     return playlist_id
 
 
@@ -245,7 +249,7 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
     # uris de las canciones
     for i in range(len(lista_agregar)):
         search = buscar_item(spotify, token_yutub, "youtube",
-                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 5, ('track',))
+                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
         id: str = comparacion_con_search_youtube(search, lista_agregar[i][0], lista_agregar[i][1],
                                                  lista_no_agregado, spotify, token_yutub)
         print(id)
@@ -261,11 +265,10 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
 def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uris: list,
                                    lista_no_encontrados: list) -> None:
     # limpio el search con los cinco primeros.
-    lista_encontrados: list = []
-    if len(search) != 0 :
-        for item in search[0]:
-            for artist in item.artists:
-                lista_encontrados.append([item.uri, item.name, artist.name])
+    if len(search) !=0 :
+        for x in search:
+            for item in x.items:
+                uris.append(item.uri)
     else:
         lista_no_encontrados.append([nombre, artista])
 
@@ -307,16 +310,18 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     print(lista_agregar)
     uris: list = []
     lista_no_agregado: list = []
+    # lista_encontrados: list = []
     # uris de las canciones
     for i in range(len(lista_agregar)):
         search = buscar_item(spotify, token_yutub, "spotify",
-                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 5, ('track',))
+                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
         comparacion_con_search_spotify(search, lista_agregar[i][0], lista_agregar[i][1], uris,
                                        lista_no_agregado)
         # se agrega las canciones encontradas
     agregar_cancion_a_spotify(playlist_id, uris, spotify)
     no_se_pudo: dict = {}
     no_se_pudo['no se pudo'] = lista_no_agregado
+
     return no_se_pudo
 
 ### ----------------------- WORDCLOUD -------------------------------------------------------------
@@ -716,7 +721,7 @@ def buscar_cancion(spotify: object, token_youtube: object, resultados: list, ser
             item_n['id'] = x['id']['videoId']
             item_n['name'] = x['snippet']['title']
             item_n['artists'] = [x['snippet']['channelTitle']]
-            item_n['album'] = "Desconocido"
+            item_n['album'] = "Descono1cido"
             resultados.append(item_n)
 
 
@@ -724,7 +729,10 @@ def buscar_cancion(spotify: object, token_youtube: object, resultados: list, ser
 def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, limit:int, types:tuple=('track',))-> tuple:
     if servidor == "spotify":
         # cambiando el tipo podemos buscar playlists, albums, artistas, etc
-        search = spotify.search(query, types=types, market=None, include_external=None, limit=limit, offset=0)
+        try:
+            search = spotify.search(query, types=types, market=None, include_external=None, limit=limit, offset=0)
+        except tk.NotFound:
+            search:tuple = ()
     elif servidor == "youtube":
         youtube = token_youtube
         search = youtube.search().list(
