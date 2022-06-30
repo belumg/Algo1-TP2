@@ -46,7 +46,6 @@ def menu_perfiles(perfil: str) -> None:
                 █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
                 ██─█▄█─███─▄█▀██─█▄▀─███─██─██
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
-
          ╔══════════════════════════════════════════╗
                                                             
           [1] {mensaje_seleccionar}                                    
@@ -54,7 +53,7 @@ def menu_perfiles(perfil: str) -> None:
           [2] Ingresar perfil.                              - {mensaje_perfil}
 
           [3] {mensaje}
-
+          
          ╚══════════════════════════════════════════╝  
     """)
 
@@ -200,14 +199,23 @@ MENU: str = """
                 ██─█▄█─███─▄█▀██─█▄▀─███─██─██
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
          ╔══════════════════════════════════════════╗
+
           [1] Listar las playlist actuales
+
           [2] Exportar analisis de playlist a CSV
+
           [3] Crear nueva playlist
+
           [4] Buscar y administrar canciones
+
           [5] Sincronizar playlist 
+
           [6] Nube de palabras de playlist 
+
           [7] Cambiar de perfil
+
           [0] Salir
+
          ╚══════════════════════════════════════════╝  
     """
 
@@ -252,3 +260,9 @@ def falta_plataforma(nombre_plataforma: str) -> None:
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     - Faltan los permisos de: {nombre_plataforma}
     """)
+
+PLAYLIST_CREADA: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+      [PLAYLIST CREADA EXITOSAMENTE]
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
