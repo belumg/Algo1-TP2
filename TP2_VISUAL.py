@@ -24,16 +24,19 @@ def inicio() -> None:
     input("         Presione Enter para continuar: ")
     print()
 
+
 def menu_perfiles(perfil: str) -> None:
     """
     Pre: Recibe un string, si esta vacio entonces el usuario aun no eligio un perfil.
-    Post: Imprime un menu con 3 opciones (perfil guardado, ingresar perfil, salir o volver al menu).
+    Post: Imprime un menu con 3 opciones (perfil guardado/otro perfil, ingresar perfil, salir/ir menu perfil).
     """
     if not perfil:
-        mensaje: str = "Terminar el programa."
+        mensaje_seleccionar: str = "Seleccionar perfil guardado"
+        mensaje: str = "Terminar el programa"
         mensaje_perfil: str = "Aun no eligio un perfil"
     else:
-        mensaje: str = "Volver al menu principal"
+        mensaje_seleccionar: str = "Elegir otro perfil"
+        mensaje: str = "Ingresar al menu de perfil"
         mensaje_perfil: str = perfil
 
     print(f"""
@@ -44,8 +47,8 @@ def menu_perfiles(perfil: str) -> None:
 
          ╔══════════════════════════════════════════╗
                                                             
-          [1] Seleccionar perfil guardado.                  Perfil elegido:                   
-                                                            
+          [1] {mensaje_seleccionar}                                    
+                                                            Perfil elegido:
           [2] Ingresar perfil.                              - {mensaje_perfil}
 
           [3] {mensaje}
@@ -53,7 +56,8 @@ def menu_perfiles(perfil: str) -> None:
          ╚══════════════════════════════════════════╝  
     """)
 
-def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = []) -> None:
+
+def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = [], ambas: bool = False) -> None:
     """
     Pre: Recibe un bool y una lista.
     Post: Imprime un menu que tiene 3 valores que variaran segun los datos recibidos por parametro.
@@ -64,57 +68,49 @@ def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = []) ->
     spotify: str = ""
     if crear_perfil and opciones_elegidas:
         mensaje: str = "Crear perfil"
-        if 1 in opciones_elegidas: youtube: str = "--> Permisos aceptados"      #REVISAR (PONER UN MEJOR STRING)
+        if 1 in opciones_elegidas: youtube: str = "--> Permisos aceptados"  # REVISAR (PONER UN MEJOR STRING)
         if 2 in opciones_elegidas: spotify: str = "--> Permisos aceptados"
     elif crear_perfil and not opciones_elegidas:
         mensaje: str = "No crear perfil"
+    elif ambas:
+        mensaje: str = "Mostrar ambas"
     else:
         mensaje: str = "Volver al menu"
 
     print(f"""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
             Elegir plataforma:        
-
         [1] Youtube      {youtube}
-
         [2] Spotify      {spotify}
-
         [3] {mensaje}
-
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """)
 
 NOMBRE_NO_VALIDO: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
             [NOMBRE INCORRECTO]
-
       Posibles causas:
         - Esta vacio.
         - Ese nombre ya existe.
-
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
 INSTRUCCIONES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
               [INSTRUCCIONES]
-
-     - Logearse (si es necesario).
+     - Log in (si es necesario).
      - Aceptar los permisos.
      - Copiar nueva URL.
-
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
 ERROR_URL: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
              [URL INCORRECTA]
-
       Posibles causas:
         - Mal ingreso de datos.
         - No acepto los permisos.
         - Copio mal la URL. 
-
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
@@ -131,36 +127,132 @@ NO_PERFILES: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-def visual_lista_elementos(lista_mostrar:list, mensaje:str, enumerar:bool) -> None:
+
+def visual_lista_elementos(lista_mostrar: list, mensaje: str, enumerar: bool) -> None:
     """
     Pre: Recibe una lista no vacia, un mensaje que sera el titulo del menu
          y un bool que nos dira si tenemos que enumerar los elementos o no.
     Post: Imprime los elementos de la lista en un menu que tiene el mensaje ingresado.
     """
-    maxima_long = len(sorted(lista_mostrar, key=len, reverse=True)[0]) +5
-    if maxima_long < LONGITUD: maxima_long = LONGITUD
-    print(f"┏━{'━'*maxima_long}━┓")
+    maxima_long = len(sorted(lista_mostrar, key=len, reverse=True)[0]) + 5
+    if maxima_long<LONGITUD: maxima_long = LONGITUD
+    print(f"┏━{'━' * maxima_long}━┓")
     print(f"{mensaje}".center(maxima_long))
-    print(f"┣━{'━'*maxima_long}━┫\n")
+    print(f"┣━{'━' * maxima_long}━┫\n")
     if enumerar:
         for numero, dato in enumerate(lista_mostrar, 1):
             print(f" [{numero}] {dato}\n")
     else:
         for dato in lista_mostrar:
             print(f" - {dato}\n")
-    print(f"┗━{'━'*maxima_long}━┛")
+    print(f"┗━{'━' * maxima_long}━┛")
     if not enumerar:
         input(" Presione Enter para volver al menu: ")
 
+
+NO_PLAYLIST :str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+        No se encontraron playlists   
+         guardadas en esta cuenta.
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+
+def mostrar_cancion(cancion: dict, orden: int, titulo: str = "") -> None:
+    print(f"""     {titulo}
+        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+         Cod. {orden}
+         {cancion['name']}
+         Artistas: {','.join(cancion['artists'])}
+         Album: {cancion['album']}
+        ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+        """)
+
+def mostrar_nombre_vid(cancion: dict, orden: int, titulo: str = "") -> None:
+    print(f"""     {titulo}
+        ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+         Cod. {orden}
+         {cancion['name']}
+         Canal: {','.join(cancion['artists'])}
+        ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+        """)
+
+
+def menu_con_opciones_cortas(titulo: str, opciones: list) -> None:
+    # sirve para cualquier menu de opciones, solo enviar titulo y lista de opciones
+    print(f"""     {titulo}
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    """)
+    for i in range(len(opciones)):
+        print(f"     [{i + 1}]  {opciones[i]}")
+    print(f"""
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    """)
+
+
+MENU: str = """
+                ██████████████████████████████
+                █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
+                ██─█▄█─███─▄█▀██─█▄▀─███─██─██
+                ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
+         ╔══════════════════════════════════════════╗
+          [1] Listar las playlist actuales
+          [2] Exportar analisis de playlist a CSV
+          [3] Crear nueva playlist
+          [4] Buscar y administrar canciones
+          [5] Sincronizar playlist 
+          [6] Nube de palabras de playlist 
+          [7] Cambiar de perfil
+          [0] Salir
+         ╚══════════════════════════════════════════╝  
+    """
+
 NO_INTERNET: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   
-       
+
          ▄██████████████▄▐█▄▄▄▄█▌
          ██████▌▄▌▄▐▐▌███▌▀▀██▀▀
          ████▄█▌▄▌▄▐▐▌▀███▄▄█▌
          ▄▄▄▄▄██████████████▀
-
        [NO HAY CONEXION A INTERNET]
-
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
+def falta_archivo(nombre_plataforma: str) -> None:
+    """Imprime un mensaje que le avisa al usuario que archivo le falta para que el software se pueda ejecutar."""
+    print(f"""
+⠄⠄⠄⠄⠄⠄⢀⣠⣤⣶⣶⣶⣤⣄⠄⠄⢀⣠⣤⣤⣤⣤⣀⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⢠⣾⣿⣿⣿⣿⠿⠿⢿⣿⣿⡆⣿⣿⣿⣿⣿⣿⣿⣷⡄⠄⠄⠄⠄⠄
+⠄⠄⠄⣴⣿⣿⡟⣩⣵⣶⣾⣿⣷⣶⣮⣅⢛⣫⣭⣭⣭⣭⣭⣭⣛⣂⠄⠄⠄⠄
+⠄⠄⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣭⠛⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠄
+⣠⡄⣿⣿⣿⣿⣿⣿⣿⠿⢟⣛⣫⣭⠉⠍⠉⣛⠿⡘⣿⠿⢟⣛⡛⠉⠙⠻⢿⡄    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣶⣶⣶⣶⣶⣶⣶⣭⣍⠄⣡⣬⣭⣭⣅⣈⣀⣉⣁⠄            [FALTA UN ARCHIVO]
+⣿⣿⣿⣿⣿⣿⣿⣿⣶⣭⣛⡻⠿⠿⢿⣿⡿⢛⣥⣾⣿⣿⣿⣿⣿⣿⣿⠿⠋⠄      Necesitamos el archivo:
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣩⣵⣾⣿⣿⣯⣙⠟⣋⣉⣩⣍⡁⠄⠄⠄        - "credenciales_{nombre_plataforma}.json"
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣷⡄⠄⠄        Sin ese archivo no podemos
+⣿⣿⣿⣿⣿⣿⡿⢟⣛⣛⣛⣛⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⡀⠄           ejecutar el software 
+⣿⣿⣿⣿⣿⡟⢼⣿⣯⣭⣛⣛⣛⡻⠷⠶⢶⣬⣭⣭⣭⡭⠭⢉⡄⠶⠾⠟⠁⠄    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+⣿⣿⣿⣿⣟⠻⣦⣤⣭⣭⣭⣭⣛⣛⡻⠿⠷⠶⢶⣶⠞⣼⡟⡸⣸⡸⠿⠄⠄⠄
+⣛⠿⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠷⡆⣾⠟⡴⣱⢏⡜⠆⠄⠄⠄
+⣭⣙⡒⠦⠭⣭⣛⣛⣛⡻⠿⠿⠟⣛⣛⣛⣛⡋⣶⡜⣟⣸⣠⡿⣸⠇⣧⡀⠄⠄
+⣿⣿⣿⣿⣷⣶⣦⣭⣭⣭⣭⣭⣭⣥⣶⣶⣶⡆⣿⣾⣿⣿⣿⣷⣿⣸⠉⣷⠄⠄
+""")
+
+def falta_plataforma(nombre_plataforma: str) -> None:
+    """Imprime un mensaje que le avisa al usuario que le falta dar permisos a una plataforma."""
+    print(f"""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+         Tienes que aceptar los        
+      permisos en ambas plataformas.
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    - Faltan los permisos de: {nombre_plataforma}
+    """)
+
+DE_QUE_LADO: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+                 Elegir:               
+        [1] Spotify --> Youtube
+        [2] Youtube --> Spotify
+        [3] Volver al menu
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    """
