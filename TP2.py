@@ -634,7 +634,7 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
     seleccionar_playlist(usuario_actual, mi_playlist, servidor)
 
     if mi_playlist['servidor'] == "spotify":
-        importar_playlist(usuario_actual['spotify'], usuario_actual['token_youtube'], mi_playlist['id'],
+        importar_playlist(usuario_actual['spotify'], usuario_actual['youtube'], mi_playlist['id'],
                           mi_playlist['name'], mi_playlist['servidor'], detalles_playlist)
         for track in detalles_playlist['tracks']:
             try:
@@ -680,7 +680,7 @@ def seleccion_servidor() -> str:
         servidor = input("Servidor inválido, vuelva a ingresar >>> ").lower()
     return servidor
 
-def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servidor:str) -> None:
+def buscar_cancion(spotify: object, token_youtube: object, resultados: list, servidor:str) -> None:
     datos_parseados : list = list()
     # Recibe resultados como list vacia para poder devolver las canciones de la búsqueda.
     # resultados:list = [
@@ -775,7 +775,7 @@ def agregar_a_playlist(usuario_actual:dict, cancion:dict, servidor:str) -> None:
     if mi_playlist['servidor'] == 'spotify':
         agregar_cancion_a_spotify(mi_playlist['id'], [cancion['uri']], usuario_actual['spotify'])
     elif mi_playlist['servidor'] == 'youtube':
-        agregar_cancion_a_youtube(mi_playlist['id'], cancion['id'], usuario_actual['token_youtube'])
+        agregar_cancion_a_youtube(mi_playlist['id'], cancion['id'], usuario_actual['youtube'])
 
 
 def agregar_cancion_a_spotify(playlist_id:str, uri_cancion:list, spotify:object) -> None:
@@ -855,7 +855,7 @@ def administracion_de_canciones(usuario_actual:dict) -> None:
     ]
 
     servidor = seleccion_servidor()
-    buscar_cancion(usuario_actual['spotify'], usuario_actual['token_youtube'], resultados, servidor)
+    buscar_cancion(usuario_actual['spotify'], usuario_actual['youtube'], resultados, servidor)
     if len(resultados) > 0:
         print(f"""\n     Resultados de búsqueda""")
         for i in range(len(resultados)):
@@ -1325,17 +1325,17 @@ def main() -> None:
         elif seleccion == 3:
             # Crear playlist
             crear_playlist(usuario_actual['id_usuario_spotify'], usuario_actual['spotify'],
-                           usuario_actual['token_youtube'])
+                           usuario_actual['youtube'])
         elif seleccion == 4:
             #Buscar y administrar canción
             administracion_de_canciones(usuario_actual)
         elif seleccion == 5:
             #Sincronizar playlists
-            spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'],
+            spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'],
                                usuario_actual['id_usuario_spotify'], usuario_actual['id_usuario_youtube'])
         elif seleccion == 6:
             #Generar wordcloud
-            wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'])
+            wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'])
         elif seleccion == 7:
             #Cambiar de perfil
             manejo_perfiles(usuario_actual)
