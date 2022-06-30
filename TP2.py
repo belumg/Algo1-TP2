@@ -393,13 +393,13 @@ def mostrame_esta() -> None:
 ###################################################################################################
 
 def crear_playlist_spotify(user_id: str, spotify: object) -> str:
-    nombre: str = input("indique el nombre para la playlist en spotify")
-    publica: str = input("indique si desea que sea publica (s/n)")
+    nombre: str = input("Indique el nombre para la playlist en Spotify: ")
+    publica: str = input("Indique si desea que sea publica (s/n): ")
     if publica in "sS":
         public: bool = True
     else:
         public: bool = False
-    descripcion: str = input("indique descripción: ")
+    descripcion: str = input("Indique descripción: ")
     spotify.playlist_create(user_id, nombre, public, descripcion)
     return nombre
 
@@ -407,8 +407,8 @@ def crear_playlist_spotify(user_id: str, spotify: object) -> str:
 def crear_playlist_youtube(token_yutub: object) -> str:
     youtube = token_yutub
     nombre: str = input("Indicame el nombre bebe: ")
-    descripcion: str = input("La descripcion please")
-    privaciti: str = input("Privado (p) o no privado (n) esa es la cuestion")
+    descripcion: str = input("La descripcion please: ")
+    privaciti: str = input("Privado (p) o no privado (n) esa es la cuestion: ")
     i: int = 0
     while privaciti != "p" and privaciti != "n":
         i = i + 1
@@ -1086,6 +1086,7 @@ def manejo_perfiles(perfil: dict):
         if opcion == 1:
             perfil_elegido: str = elegir_perfil(perfil)                             # EN REVISION
             if perfil_elegido:
+                if perfil["username"]: perfil.clear()
                 perfil["username"] = perfil_elegido
         elif opcion == 2:
             nuevo_perfil()
