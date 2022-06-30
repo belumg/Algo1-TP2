@@ -93,7 +93,7 @@ def limpieza_yutub(search: dict)->list:
         cantante:  str = ""
         cancion,cantante = limpieza(titulo, search['items'][0]['channelTitle'])
         lista_encontrados.append([id, cancion, cantante])
-     return lista_encontrados
+    return lista_encontrados
 
 
 def limpieza(titulo: str, canal: str)->tuple:
@@ -486,22 +486,19 @@ def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
 def playlist_segun_servidor(usuario_actual: dict) -> str:
     #Recibe la información de usuario
     #Devuelve el nombre del servidor en el que elige trabajar el usuario
-    print("Desea listar: \n"
-          "[1] Playlist de Spotify\n"
-          "[2] Playlist de Youtube\n"
-          "[3] Mostrar ambas")
+    vis.youtube_spotify(mostar_ambas=True)
     seleccion = input_num_con_control(1,3)
-
     if seleccion == 1:
-        print_playlists_de_user(usuario_actual, "spotify")
-        servidor: str = "spotify"
-    elif seleccion == 2:
         print_playlists_de_user(usuario_actual, "youtube")
         servidor: str = "youtube"
+    elif seleccion == 2:
+        print_playlists_de_user(usuario_actual, "spotify")
+        servidor: str = "spotify"
     else:
         print_playlists_de_user(usuario_actual, "spotify")
         print_playlists_de_user(usuario_actual, "youtube")
         servidor: str = "unknown"
+    input(" Presione Enter para continuar: ")
     return servidor
 
 
