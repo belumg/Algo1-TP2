@@ -226,3 +226,13 @@ FALTA_ARCHIVO: str = """
            ejecutar el software       
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
+def falta_plataforma(nombre_plataforma: str):
+    """Imprime un mensaje que le avisa al usuario que le falta dar permisos a una plataforma."""
+    print(f"""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+         Tienes que aceptar los        
+      permisos en ambas plataformas.
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    - Faltan los permisos de: {nombre_plataforma}
+    """)
