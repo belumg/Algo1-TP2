@@ -156,7 +156,7 @@ def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: objec
                                          detalles_yutub, spotify)
 
     if len(no_se_pudo['no se pudo']) != 0:
-        exportar_dict_a_cvs("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
+        exportar_dict_a_csv("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
     else:
         print("HABEMUS UN GANADOR, USTED PASO TODAS SUS CANCIONES CORRECTAMENTE")
 
@@ -265,8 +265,7 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
 
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
                                      token_yutub: object, user_id_spotifai: str, playlist_yutub: dict,
-                                     detalles_yutub: dict, spotify: object,
-                                     playlist_emerg:dict={}, emergencia:bool= False) -> dict:
+                                     detalles_yutub: dict, spotify: object, emergencia:bool= False) -> dict:
     # A ESTE PUNTO LA PROGRAMADORA SE ESTA PREGUNTANDO SI ES BUENA IDEA SEGUIR VIVIENDO
     playlist_id: str = ""
     lista_yutub: list = []
@@ -274,6 +273,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     if not emergencia:
         print_playlists_de_user(usuario_actual, "youtube")
         seleccionar_playlist(usuario_actual, playlist_yutub, "youtube")
+
     # recibo la informacion de la lista elegida
     importar_playlist(spotify, token_yutub, playlist_yutub['id'], playlist_yutub['name'],
                       "youtube", detalles_yutub)
@@ -317,11 +317,25 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     except tk.BadRequest:
         print("Upsi! Ninguna canción de las que estaban en su lista fueron encontradas en Spotify")
 
-    no_se_pudo: dict = {}
-    no_se_pudo['no se pudo'] = lista_no_agregado
-
-    return no_se_pudo
-
+    if not emergencia:
+        no_se_pudo: dict = {}
+        no_se_pudo['no se pudo'] = lista_no_agregado
+        return no_se_pudo
+    else:
+        playlist_emerg: dict = {}
+        if opcion2 == 2:
+            playlist_emerg = {
+                'id': playlist_id,
+                'servidor': 'spotify',
+                'name': detalles_spotifai['name']
+            }
+        else:
+            playlist_emerg = {
+                'id': playlist_id,
+                'servidor': 'spotify',
+                'name': nombre
+            }
+        return playlist_emerg
 
 ### ----------------------- WORDCLOUD -------------------------------------------------------------
 ###################################################################################################
@@ -614,13 +628,17 @@ def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, pla
         normalizar_playlist_youtube(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
 
 
-def exportar_dict_a_cvs(extension:str, usuario:str, mi_dict:dict, nombre:str) -> None:
+def exportar_dict_a_csv(extension:str, usuario:str, mi_dict:dict, nombre:str) -> None:
     # Funciona para un solo dict, no nested dicts, y reescribe el archivo
     #Recibe un dict, lo guarda como archivo csv
-    with open(f"{nombre}_{usuario}.{extension}", "w") as archivito:
+    with open(f"analisis_{nombre}_de_{usuario}.{extension}", "w") as archivito:
         w = csv.DictWriter(archivito, mi_dict.keys())
         w.writeheader()
         w.writerow(mi_dict)
+    # else:
+    #     with open(f"analisis_playlists_de_{usuario}.{extension}", "a") as archivito:
+    #         w = csv.DictWriter(archivito, mi_dict.keys())
+    #         w.writerow(mi_dict)
 
 
 ### Funciones propias del analisis de atributos >>>>>>>>>>>>>>>>>>>>>>>>
@@ -637,13 +655,10 @@ def analizar_track(track:dict, atributos_track:dict, spotify:object, atributos:l
 
 
 def analisis_de_playlist(usuario_actual:dict) -> None:
-    #Recibe los datos del usuario
-    #Guarda un csv con el promedio de los atributos de la playlist seleccionada
-    fecha = date.today()
+    #Recibe los datos del usuario y selecciona una playlist de una lista para analizar
+    #Llama a las funciones necesarias para el analisis
     mi_playlist:dict=dict()
-    atributos_playlist:dict={}
-    atributos_track: dict = {}
-    detalles_playlist: dict=dict()
+
     # atributos_playlist:dict:
     #     {
     #     fecha de analisis : object??
@@ -653,15 +668,25 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
     #     atributo2: int,
     #     ...
     # }
+    servidor:str = playlist_segun_servidor(usuario_actual)
+    if servidor == "unknown":
+        servidor = seleccion_servidor()
+    seleccionar_playlist(usuario_actual, mi_playlist, servidor)
+    realizar_analisis_playlist (usuario_actual, mi_playlist)
+
+
+def realizar_analisis_playlist (usuario_actual:dict, mi_playlist:dict) -> None:
+    #Recibe datos de usuario y de la playlist a analizar atributos
+    #Guarda un csv con los atributos promediados
+    atributos_playlist:dict={}
+    atributos_track: dict = {}
+    detalles_playlist: dict=dict()
+    fecha = date.today()
+
     atributos: list = [
         'acousticness', 'danceability', 'energy', 'liveness', 'loudness',
         'valence', 'tempo', 'duration_ms', 'instrumentalness', 'speechiness'
     ]
-    servidor:str = playlist_segun_servidor(usuario_actual)
-    if servidor == "unknown":
-        servidor = seleccion_servidor()
-
-    seleccionar_playlist(usuario_actual, mi_playlist, servidor)
 
     if mi_playlist['servidor'] == "spotify":
         importar_playlist(usuario_actual['spotify'], usuario_actual['youtube'], mi_playlist['id'],
@@ -673,18 +698,18 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
                     if atributos_playlist == {} and key not in atributos_playlist.keys():
                         atributos_playlist['fecha de analisis'] = fecha
                         atributos_playlist['id'] = detalles_playlist['id']
-                        atributos_playlist['playlist name'] = detalles_playlist['name']
+                        atributos_playlist['playlist name'] = detalles_playlist['name'].encode()
                         atributos_playlist[key] = value
                     elif key not in atributos_playlist.keys():
                         atributos_playlist[key] = value
                     else:
                         atributos_playlist[key] += value
-                exportar_dict_a_cvs('cvs', usuario_actual['username'], atributos_playlist,
-                                    f"atributos_playlist_{mi_playlist['id']}")
+                exportar_dict_a_csv('csv', usuario_actual['username'], atributos_playlist,
+                                    mi_playlist['id'])
             except TimeoutError:
                 print(vis.NO_INTERNET)
 
-        if os.path.isfile(f'atributos_playlist_{mi_playlist["id"]}_{usuario_actual["username"]}.cvs'):
+        if os.path.isfile(f"analisis_{mi_playlist['id']}_de_{usuario_actual['username']}.csv"):
             print(f"Se ha creado un archivo con los atributos de la playlist {atributos_playlist['playlist name']} \n"
                   f"en el directorio {os.getcwd()}")
         else:
@@ -698,15 +723,17 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
         if sincronizar == "s":
             sincronizacion_de_emergencia(usuario_actual, mi_playlist)
 
+
 def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
     #recibe una playlist de youtube (dict mi_playlist)
     #la sincroniza con spotify para realizar el analisis de los atributos de los tracks
     temp_spotify: dict = dict()
     detalles_spotify: dict = dict()
     detalles_youtube: dict = dict()
-    sincronizacion_youtube_a_spotify(usuario_actual, temp_spotify, detalles_spotify,
+    nueva_playlist:dict = sincronizacion_youtube_a_spotify(usuario_actual, temp_spotify, detalles_spotify,
                                      usuario_actual['youtube'], usuario_actual['id_usuario_youtube'],
-                                     mi_playlist, detalles_youtube, usuario_actual['spotify'])
+                                     mi_playlist, detalles_youtube, usuario_actual['spotify'], True)
+    realizar_analisis_playlist(usuario_actual, nueva_playlist)
 
 
 ### ------------------------ BÚSQUEDA DE CANCIONES ------------------------------------------------
@@ -871,8 +898,8 @@ def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
         print("\n- [x] Si la letra mostrada es incorrecta y quiere "
                         "volver a buscarla\n- Cualquier [Tecla] para finalizar")
 
-    es_la_letra = input("     >>>   ")
-    if es_la_letra in "xX":
+    es_la_letra = input("     >>>   ").lower()
+    if es_la_letra == "x":
         if servidor == "youtube":
             print("[1] Ingresar nombre manualmente \n"
                   "[2] Extraer información con la libreria youtube_dl")
@@ -892,7 +919,6 @@ def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
             print("No pudimos encontrar la letra que buscaba. ")
         else:
             print(letra)
-
         input("Presione una tecla para volver al menu >>> ")
 
 
@@ -935,9 +961,10 @@ def administracion_de_canciones(usuario_actual:dict) -> None:
 ###------------------------- MANEJO DE LYRICS ------------------------------------------------------
 ####################################################################################################
 def ingreso_genius()->str:
-    client_id: str = "LkrBCrYXlZO4Wm7Hx1X-AU0g9z_bNYc2ehowpFLNhgcVa-MdX8J1zceedRf59FNN"
-    client_secret: str = "nRzbwpwEiEcic8uN9qyXRKAwo8O2e48lstan5rtc8F8FKIw6QbY1DUGV8P_FTzom763BRHuJWKcowt7jm9U8mQ"
-    token_genius: str = "OomA5Dwkt15uqiCNHKthDcDx7gqYbFAkXeQFoX_DHqu-C6NQzyuBoxOY5o76C64P"
+    with open("credencial_Genius.json") as f:
+        datos = json.load(f)
+    token: tuple = tuple(datos.values())
+    token_genius: str = token[0]
     return token_genius
 
 
