@@ -217,17 +217,27 @@ NO_INTERNET: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-FALTA_ARCHIVO: str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-            [FALTA UN ARCHIVO]
-      Necesitamos el archivo:
-        - "credenciales_SP.py"
-        Sin ese archivo no podemos    
-           ejecutar el software       
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
+def falta_archivo(nombre_plataforma: str) -> None:
+    """Imprime un mensaje que le avisa al usuario que archivo le falta para que el software se pueda ejecutar."""
+    print(f"""
+⠄⠄⠄⠄⠄⠄⢀⣠⣤⣶⣶⣶⣤⣄⠄⠄⢀⣠⣤⣤⣤⣤⣀⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⢠⣾⣿⣿⣿⣿⠿⠿⢿⣿⣿⡆⣿⣿⣿⣿⣿⣿⣿⣷⡄⠄⠄⠄⠄⠄
+⠄⠄⠄⣴⣿⣿⡟⣩⣵⣶⣾⣿⣷⣶⣮⣅⢛⣫⣭⣭⣭⣭⣭⣭⣛⣂⠄⠄⠄⠄
+⠄⠄⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣭⠛⣿⣿⣿⣿⣿⣿⣿⣿⣦⡀⠄
+⣠⡄⣿⣿⣿⣿⣿⣿⣿⠿⢟⣛⣫⣭⠉⠍⠉⣛⠿⡘⣿⠿⢟⣛⡛⠉⠙⠻⢿⡄    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣶⣶⣶⣶⣶⣶⣶⣭⣍⠄⣡⣬⣭⣭⣅⣈⣀⣉⣁⠄            [FALTA UN ARCHIVO]
+⣿⣿⣿⣿⣿⣿⣿⣿⣶⣭⣛⡻⠿⠿⢿⣿⡿⢛⣥⣾⣿⣿⣿⣿⣿⣿⣿⠿⠋⠄      Necesitamos el archivo:
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣩⣵⣾⣿⣿⣯⣙⠟⣋⣉⣩⣍⡁⠄⠄⠄        - "credenciales_{nombre_plataforma}.json"
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣷⡄⠄⠄        Sin ese archivo no podemos
+⣿⣿⣿⣿⣿⣿⡿⢟⣛⣛⣛⣛⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⡀⠄           ejecutar el software 
+⣿⣿⣿⣿⣿⡟⢼⣿⣯⣭⣛⣛⣛⡻⠷⠶⢶⣬⣭⣭⣭⡭⠭⢉⡄⠶⠾⠟⠁⠄    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+⣿⣿⣿⣿⣟⠻⣦⣤⣭⣭⣭⣭⣛⣛⡻⠿⠷⠶⢶⣶⠞⣼⡟⡸⣸⡸⠿⠄⠄⠄
+⣛⠿⢿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠷⡆⣾⠟⡴⣱⢏⡜⠆⠄⠄⠄
+⣭⣙⡒⠦⠭⣭⣛⣛⣛⡻⠿⠿⠟⣛⣛⣛⣛⡋⣶⡜⣟⣸⣠⡿⣸⠇⣧⡀⠄⠄
+⣿⣿⣿⣿⣷⣶⣦⣭⣭⣭⣭⣭⣭⣥⣶⣶⣶⡆⣿⣾⣿⣿⣿⣷⣿⣸⠉⣷⠄⠄
+""")
 
-def falta_plataforma(nombre_plataforma: str):
+def falta_plataforma(nombre_plataforma: str) -> None:
     """Imprime un mensaje que le avisa al usuario que le falta dar permisos a una plataforma."""
     print(f"""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
