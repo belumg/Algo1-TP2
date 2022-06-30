@@ -955,11 +955,26 @@ def playlists_spotify(spotify, id_usuario) -> None:
 
 def listar_playlistsYT(youtube: object) -> dict:
     request = youtube.playlists().list(
-                    part="snippet,id",
+                    part="snippet,id,status",
                     maxResults=50,
                     mine=True
                     )
     response = request.execute()
+    
+    # En caso de que haya más de 50 resultados: 
+    nextPageToken = response.get("nextPageToken")
+    while ("nextPageToken" in response):
+        nextPage = youtube.playlists().list(
+                        part="snippet",
+                        maxResults="50",
+                        pageToken=nextPageToken
+                        ).execute()
+        response["items"] = response["items"] + nextPage["items"]
+
+        if "nextPageToken" not in nextPage:
+            response.pop("nextPageToken", None)
+        else:
+            nextPageToken = nextPage["nextPageToken"]
 
     # Agrega nombre de playlist fuera de snippet >>>>>>>>>>>>>>>>>>>>>>
     for playlist in response['items']:
