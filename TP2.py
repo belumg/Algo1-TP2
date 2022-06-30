@@ -1343,6 +1343,8 @@ def main() -> None:
         elif seleccion == 7:
             #Cambiar de perfil
             manejo_perfiles(usuario_actual)
+            if not datos_agregados_correctamente(usuario_actual):
+                terminar: bool = True
         else:
             terminar: bool = True
 
