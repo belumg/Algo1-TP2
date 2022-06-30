@@ -44,9 +44,13 @@ En el programa realizado se trabajó con las APIs de Youtube y Spotify. Se pidi�
 ## Descripción de la Aplicación:
 
 La aplicación consta de varios puntos.
+
 El menú conduce a cada una de las funciones, además de la posibilidad de un manejo efectivo de varios usuarios en el programa.
+
 Se inicia con la autenticación, proceso por el cual cedemos nuestros permisos para realizar cambios en ambas plataformas, generando un objeto de comunicación con la API. Gracias a este logramos obtener y devolver valores. 
+
 Las siguientes funciones van desde el listado de las playlists hasta la posibilidad de pasar los datos de una plataforma a la otra. Estas dependen de la autenticación correcta y un ‘token’ valido.
+
 Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodidad del usuario, en su mayoría las acciones se expresan como menu de opciones.
 
 ## Requerimientos.
