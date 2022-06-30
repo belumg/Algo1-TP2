@@ -94,7 +94,6 @@ NOMBRE_NO_VALIDO: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-
 INSTRUCCIONES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
               [INSTRUCCIONES]
@@ -103,7 +102,6 @@ INSTRUCCIONES: str = """
      - Copiar nueva URL.
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
-
 
 ERROR_URL: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -115,13 +113,11 @@ ERROR_URL: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-
 DATOS_GUARDADOS: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
       [DATOS GUARDADOS EXITOSAMENTE]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
-
 
 NO_PERFILES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -170,7 +166,6 @@ def mostrar_cancion(cancion: dict, orden: int, titulo: str = "") -> None:
          Album: {cancion['album']}
         ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
         """)
-        
 
 def mostrar_nombre_vid(cancion: dict, orden: int, titulo: str = "") -> None:
     print(f"""     {titulo}
@@ -194,21 +189,6 @@ def menu_con_opciones_cortas(titulo: str, opciones: list) -> None:
     """)
 
 
-
-FALTA_ARCHIVO: str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-            [FALTA UN ARCHIVO]
-      Necesitamos el archivo:
-        - "credenciales_SP.py"
-        Sin ese archivo no podemos    
-           ejecutar el software       
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
-
-def falta_plataforma(nombre_plataforma: str):
-
-
-
 MENU: str = """
                 ██████████████████████████████
                 █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
@@ -226,7 +206,6 @@ MENU: str = """
          ╚══════════════════════════════════════════╝  
     """
 
-
 NO_INTERNET: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   
 
@@ -237,7 +216,6 @@ NO_INTERNET: str = """
        [NO HAY CONEXION A INTERNET]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
-
 
 def falta_archivo(nombre_plataforma: str) -> None:
     """Imprime un mensaje que le avisa al usuario que archivo le falta para que el software se pueda ejecutar."""
@@ -258,7 +236,6 @@ def falta_archivo(nombre_plataforma: str) -> None:
 ⣭⣙⡒⠦⠭⣭⣛⣛⣛⡻⠿⠿⠟⣛⣛⣛⣛⡋⣶⡜⣟⣸⣠⡿⣸⠇⣧⡀⠄⠄
 ⣿⣿⣿⣿⣷⣶⣦⣭⣭⣭⣭⣭⣭⣥⣶⣶⣶⡆⣿⣾⣿⣿⣿⣷⣿⣸⠉⣷⠄⠄
 """)
-
 
 def falta_plataforma(nombre_plataforma: str) -> None:
     """Imprime un mensaje que le avisa al usuario que le falta dar permisos a una plataforma."""
