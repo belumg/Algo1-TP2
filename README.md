@@ -1,16 +1,16 @@
-#### Trabajo Práctico Nº 2. (Versión 0.1.3006.)
+# Trabajo Práctico Nº 2. (Versión 0.1.3006.)
 En el programa realizado se trabajó con las APIs de Youtube y Spotify. Se pidió un
 programa que pudiera realizar varias funciones sobre dichas aplicaciones, trabajando sobre los
 datos, cambiando y añadiendo información que se verá reflejada tanto en Spotify como en
 Youtube.
 
-# Alumnas:
+### Alumnas:
  Ana Daniela Villalba
  Carla Mendoza Coronado
  Belen María Guatto
  Camila Abigail Solari
 
-# Librerías utilizadas:
+### Librerías utilizadas:
 -Tekore
 - Youtube_dl
 -Google-api-client
@@ -25,7 +25,7 @@ Youtube.
 -datetime
 -json
 
-# Descripción de la Aplicación:
+### Descripción de la Aplicación:
 
 La aplicación consta de varios puntos.
 El menú conduce a cada una de las funciones, además de la posibilidad de un manejo
@@ -38,7 +38,7 @@ autenticación correcta y un ‘token’ valido.
 Se pide al usuario que ingrese pocos datos para evitar el posible error de ingreso, en su
 mayoría se evalúa a partir de números con las opciones elegidas.
 
-# Requerimientos.
+### Requerimientos.
 
  Autenticación de Spotify:
 -Presione Enter cuando se lo indique.
@@ -55,7 +55,7 @@ mayoría se evalúa a partir de números con las opciones elegidas.
 -Proceda a pegar el código en el programa `principal.
 -Aparecerá un cartel con la validación de su autenticación.
 
-#Bugs.
+### Bugs.
 
 Los problemas se arreglarán en la versión 1.0.0, el 07/07/2022.
  Varias aplicaciones al requerir el uso de playlists de Youtube y de Spotify poseen un error
