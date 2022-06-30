@@ -21,9 +21,6 @@ import youtube_dl
 #### ----------------------------- CREDENTIALS SPOTIFY  -------------------------------------------
 ###################################################################################################
 
-ID_CLIENTE: str = "176365611325455e8059fbd545371d89"
-CLIENTE_SECRETO: str = "ed35a90b681042f4bbad9f284383c88a"
-URI_REDIRECCION: str = "http://localhost:8888/callback"
 SCOPE: tk.Scope = tk.scope.every
 
 ###################################################################################################
@@ -1022,7 +1019,7 @@ def nombre_perfil() -> str:
     return nombre
 
 
-def nuevo_perfil():
+def nuevo_perfil(credenciales_SP: tuple):
     """Guarda el perfil solo si acepto los permisos de al menos una plataforma."""
     nombre: str = nombre_perfil()
     opciones_elegidas: list = []
@@ -1035,7 +1032,7 @@ def nuevo_perfil():
             if obj_youtube:
                 opciones_elegidas.append(opcion)
         elif opcion == 2:
-            refresh_token: str = autenticar_spotify()
+            refresh_token: str = autenticar_spotify(credenciales_SP)
             if refresh_token:
                 opciones_elegidas.append(opcion)
         elif opcion == 3 and opciones_elegidas and (1 not in opciones_elegidas or 2 not in opciones_elegidas):
@@ -1074,7 +1071,7 @@ def elegir_perfil(perfil: dict) -> str:
     return perfil_elegido
 
 
-def manejo_perfiles(perfil: dict):
+def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
     """
     Genera un menu para crear y guardar perfiles junto con la opcion de elegir uno de los perfiles guardados.
     Si eligio un perfil entonces el nombre se guardara en el diccionario recibido.
@@ -1089,17 +1086,17 @@ def manejo_perfiles(perfil: dict):
                 if perfil["username"]: perfil.clear()
                 perfil["username"] = perfil_elegido
         elif opcion == 2:
-            nuevo_perfil()
+            nuevo_perfil(credenciales_SP)
         else:
             terminar: bool = True
 
 #### ----------------------------- AUTENTICACIÓN SPOTIFY ------------------------------------------
 ###################################################################################################
 
-def autenticar_spotify() -> str:
+def autenticar_spotify(credenciales_SP: tuple) -> str:
     """Devuelve un refresh_token si la autenticacion salio bien, caso contrario devuelve un string vacio."""
     refresh_token: str = ""
-    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(ID_CLIENTE, CLIENTE_SECRETO, URI_REDIRECCION)
+    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(credenciales_SP[0], credenciales_SP[1], credenciales_SP[2])
     auth: tk.UserAuth = tk.UserAuth(credenciales, SCOPE)
     print(vis.INSTRUCCIONES)
     input("Presione Enter para que se abra Spotify: ")
@@ -1161,7 +1158,7 @@ def conseguir_datos_playlistsSpotify(spotify, id_usuario):
     return datos
 
 
-def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YOUTUBE
+def datos_necesarios_perfil(perfil: dict, credenciales_SP: tuple) -> None:  # NECESITO INFORMACION DE YOUTUBE
     """
     Pre: Recibe un diccionario solo con el nombre del perfil.
     Post: Le agrega datos, como por ejemplo id, playlists, al diccionario recibido.
@@ -1170,7 +1167,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
     refresh_token = obtener_refresh_token_perfil(perfil["username"])
     if refresh_token:
         print("Consiguiendo datos de Spotify...")
-        token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, refresh_token)
+        token = tk.refresh_user_token(credenciales_SP[0], credenciales_SP[1], refresh_token)
         spotify = tk.Spotify(token)
         perfil["spotify"] = spotify
     if "spotify" in perfil:
@@ -1197,14 +1194,14 @@ def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YO
         perfil["playlists_youtube"] = datos_playlists
 
 
-def datos_agregados_correctamente(usuario_actual: dict) -> bool:
+def datos_agregados_correctamente(usuario_actual: dict, credenciales_SP: tuple) -> bool:
     """
     Pre: Recibe un diccionario con los datos del perfil actual.
     Post: Devuelve un False si encuentra que falta un dato importante.
     """
     if not usuario_actual["username"]:
         return False
-    datos_necesarios_perfil(usuario_actual)
+    datos_necesarios_perfil(usuario_actual, credenciales_SP)
     if "spotify" not in usuario_actual:
         return False
     elif "id_usuario_spotify" not in usuario_actual:
@@ -1308,44 +1305,64 @@ def id_canal_youtube(youtube:object) -> None:
 ####################################################################################################
 ####################################################################################################
 
+def estan_archivos():
+    """Devuelve True si encuentra los 2 archivos donde estan las credenciales que necesitamos, caso contrario devuelve False."""
+    if not os.path.isfile("credenciales_YT.json"):
+        vis.falta_archivo("YT")
+        return False
+    elif not os.path.isfile("credenciales_SP.json"):
+        vis.falta_archivo("SP")
+        return False
+    return True
+
+
+def conseguir_credenciales_spotify() -> tuple:
+    with open("credenciales_SP.json") as f:
+        datos = json.load(f)
+    return tuple(datos.values())
+
+####################################################################################################
+####################################################################################################
 
 def main() -> None:
-    vis.inicio()
-    usuario_actual: dict = {"username": ""}
-    manejo_perfiles(usuario_actual)
-    terminar: bool = True
-    if datos_agregados_correctamente(usuario_actual):
-        terminar: bool = False
-    #print(usuario_actual)
-    while not terminar:
-        print(vis.MENU)
-        seleccion = input_num_con_control(0, 7)
-        if seleccion == 1:
-            #Listar las playlist
-            playlist_segun_servidor(usuario_actual)
-        elif seleccion == 2:
-            #Exportar analisis de playlist a CSV
-            analisis_de_playlist(usuario_actual)
-        elif seleccion == 3:
-            # Crear playlist
-            crear_playlist(usuario_actual['id_usuario_spotify'], usuario_actual['spotify'],
-                           usuario_actual['token_youtube'])
-        elif seleccion == 4:
-            #Buscar y administrar canción
-            administracion_de_canciones(usuario_actual)
-        elif seleccion == 5:
-            #Sincronizar playlists
-            spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'],
-                               usuario_actual['id_usuario_spotify'], usuario_actual['id_usuario_youtube'])
-        elif seleccion == 6:
-            #Generar wordcloud
-            wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'])
-        elif seleccion == 7:
-            #Cambiar de perfil
-            manejo_perfiles(usuario_actual)
-            if not datos_agregados_correctamente(usuario_actual):
+    if estan_archivos():
+        vis.inicio()
+        credenciales_spotify: tuple = conseguir_credenciales_spotify()
+        usuario_actual: dict = {"username": ""}
+        manejo_perfiles(usuario_actual, credenciales_spotify)
+        terminar: bool = True
+        if datos_agregados_correctamente(usuario_actual, credenciales_spotify):
+            terminar: bool = False
+        #print(usuario_actual)
+        while not terminar:
+            print(vis.MENU)
+            seleccion = input_num_con_control(0, 7)
+            if seleccion == 1:
+                #Listar las playlist
+                playlist_segun_servidor(usuario_actual)
+            elif seleccion == 2:
+                #Exportar analisis de playlist a CSV
+                analisis_de_playlist(usuario_actual)
+            elif seleccion == 3:
+                # Crear playlist
+                crear_playlist(usuario_actual['id_usuario_spotify'], usuario_actual['spotify'],
+                            usuario_actual['token_youtube'])
+            elif seleccion == 4:
+                #Buscar y administrar canción
+                administracion_de_canciones(usuario_actual)
+            elif seleccion == 5:
+                #Sincronizar playlists
+                spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'],
+                                usuario_actual['id_usuario_spotify'], usuario_actual['id_usuario_youtube'])
+            elif seleccion == 6:
+                #Generar wordcloud
+                wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'])
+            elif seleccion == 7:
+                #Cambiar de perfil
+                manejo_perfiles(usuario_actual)
+                if not datos_agregados_correctamente(usuario_actual, credenciales_spotify):
+                    terminar: bool = True
+            else:
                 terminar: bool = True
-        else:
-            terminar: bool = True
 
 main()
