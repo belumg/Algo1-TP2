@@ -14,10 +14,19 @@ SCOPE: tk.Scope = tk.scope.every
 ####################################################################################################
 
 def input_num_con_control(min:int, max:int) -> int:
-    seleccion = input("      >>>    ")
+    """Devuelve un entero que esta entre los numeros recibidos por parametro."""
+    seleccion: str = input("      >>>    ")
     while not seleccion.isnumeric() or int(seleccion) > max or int(seleccion) < min:
-        seleccion = input("Inválido. Vuelva a ingresar >>> ")
+        seleccion: str = input("Inválido. Vuelva a ingresar >>>  ")
     return int(seleccion)
+
+def input_con_control(palabras_permitidas: list, mensaje: str) -> str:
+    """Devuelve un string que se encuentra entre las palabras permitidas."""
+    print(mensaje)
+    seleccion: str = input("      >>>    ").lower()
+    while seleccion not in palabras_permitidas:
+        seleccion: str = input("Inválido. Vuelva a ingresar >>>  ").lower()
+    return seleccion
 
 ######################### AUTENTICAR SPOTIFY #######################################################
 ####################################################################################################
@@ -83,24 +92,13 @@ def sacar_info_json(nombre_archivo) -> dict:
     return datos_del_archivo
 
 
-# PROBLEM: JUNTAR ESTAS FUNCIONES, TAL VEZ DEBERIA GUARDAR LOS DATOS EN 1 ARCHIVO JSON
-def guardar_youtube_en_json(usuario: str, permisos) -> None:
+def guardar_datos_en_json(usuario: str, refresh_token: str, permisos) -> None:
     """Guarda los datos recibidos en un archivo json (si no existe, se crea aqui)."""
     datos_existentes: dict = {}
-    dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
-    if os.path.isfile("datos_perfiles_YT.json"):
-        datos_existentes: dict = sacar_info_json("datos_perfiles_YT.json")
-    datos_existentes.update(dicc)
-    escribir_json(datos_existentes, "datos_perfiles_YT.json")
-
-
-def guardar_spotify_en_json(nombre: str, refresh_token: str = "") -> None:
-    """Guarda los datos recibidos en un archivo json (si no existe, se crea aqui)."""
-    datos_existentes: dict = {}
-    perfil_a_guardar: dict = {nombre: {"spotify": refresh_token}}
+    datos_guardar: dict = {usuario: {"spotify": refresh_token, "youtube": json.loads(permisos.to_json())}}
     if os.path.isfile("datos_perfiles.json"):
         datos_existentes: dict = sacar_info_json("datos_perfiles.json")
-    datos_existentes.update(perfil_a_guardar)
+    datos_existentes.update(datos_guardar)
     escribir_json(datos_existentes, "datos_perfiles.json")
 
 ######################### CREAR NUEVO PERFIL #######################################################
@@ -143,8 +141,7 @@ def nuevo_perfil(credenciales_SP: tuple):
             else: falta: str = "Spotify"
             vis.falta_plataforma(falta)
         elif opcion == 3 and opciones_elegidas:
-            if 1 in opciones_elegidas: guardar_youtube_en_json(nombre, obj_youtube)
-            if 2 in opciones_elegidas: guardar_spotify_en_json(nombre, refresh_token)
+            guardar_datos_en_json(nombre, refresh_token, obj_youtube)
             print(vis.DATOS_GUARDADOS)
             terminar: bool = True
         else:
@@ -210,7 +207,7 @@ def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
 
 def validar_permisosYT(usuario: str) -> object:
 
-    datos: dict = sacar_info_json("datos_perfiles_YT.json")
+    datos: dict = sacar_info_json("datos_perfiles.json")
 
     # Me guardo las claves que generó el usuario del perfil para YouTube.
     claves: dict = datos[usuario]["youtube"]
@@ -230,7 +227,7 @@ def validar_permisosYT(usuario: str) -> object:
 
         # Los guardo en el archivo de credenciales de perfiles.
         datos[usuario]["youtube"] = json.loads(permisos.to_json())
-        escribir_json(datos, "datos_perfiles_YT.json")
+        escribir_json(datos, "datos_perfiles.json")
 
         # Genero un nuevo cliente de YouTube.
         api_service_name: str = "youtube"
@@ -273,7 +270,9 @@ def datos_playlists_SP(spotify, id_usuario):
     Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
     """
     datos = []
-    datos_playlists = spotify.playlists(id_usuario)  # Que pasa si el usuario no tiene playlists?
+    datos_playlists = probando(spotify.playlists, [id_usuario])  # Que pasa si el usuario no tiene playlists?
+    if not datos_playlists:
+        return datos
     for playlist in datos_playlists.items:
         datos_playlist: dict = {}
         datos_playlist["name"] = playlist.name
@@ -292,22 +291,49 @@ def datos_playlists_SP(spotify, id_usuario):
 ######################### AGREGARLE DATOS AL PERFIL ################################################
 ####################################################################################################
 
+def probando(funcion_a_probar, datos_que_necesita: list = []):
+    """
+    Pre: Recibe una funcion junto con una lista de sus argumentos.
+    Post: Devuelve un string vacio si el usuario dejo de intentar que su funcion, bueno, funcionara.
+    """
+    terminar: bool = False
+    dato_buscado = ""
+    while not terminar:
+        try:
+            if datos_que_necesita:
+                dato_buscado = funcion_a_probar(*datos_que_necesita)
+            else:
+                dato_buscado = funcion_a_probar()
+        except:
+            print(vis.NO_INTERNET)
+            print(" Necesitamos internet para acceder a los datos de su perfil.")
+            intentar: str = input_con_control(["si", "no"], "Desea intentarlo de nuevo(si/no)?  ")
+            if intentar == "no":
+                terminar: bool = True
+        else:
+            terminar: bool = True
+    return dato_buscado
+
 def datos_necesarios_perfil(perfil: dict, credenciales_SP: tuple) -> None:
     """Le agrega datos sobre las plataformas al perfil recibido."""
     # Spotify:
     refresh_token = obtener_refresh_token_perfil(perfil["username"])
     if refresh_token:
         print("Consiguiendo datos de Spotify...")
-        token = tk.refresh_user_token(credenciales_SP[0], credenciales_SP[1], refresh_token)
-        spotify = tk.Spotify(token)
-        perfil["spotify"] = spotify
+        datos_necesarios: list = [credenciales_SP[0], credenciales_SP[1], refresh_token] 
+        token = probando(tk.refresh_user_token, datos_necesarios)
+        if token:
+            spotify = tk.Spotify(token)
+            perfil["spotify"] = spotify
     if "spotify" in perfil:
-        id_usuario = spotify.current_user().id
-        perfil["id_usuario_spotify"] = id_usuario
+        id_usuario: str = probando(spotify.current_user)
+        if id_usuario:
+            perfil["id_usuario_spotify"] = id_usuario.id
     if "spotify" in perfil and "id_usuario_spotify" in perfil:
         datos_playlists: list = datos_playlists_SP(perfil["spotify"], perfil["id_usuario_spotify"])
-        perfil["playlists_spotify"] = datos_playlists
-    
+        if datos_playlists:
+            perfil["playlists_spotify"] = datos_playlists
+
     # Youtube:
     print("Consiguiendo datos de Youtube...")
     youtube = validar_permisosYT(perfil["username"])
