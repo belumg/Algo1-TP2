@@ -341,21 +341,22 @@ def datos_necesarios_perfil(perfil: dict, credenciales_SP: tuple) -> None:
         if datos_playlists:
             perfil["playlists_spotify"] = datos_playlists
 
-    # Youtube:
-    print("Consiguiendo datos de Youtube...")
-    youtube = validar_permisosYT(perfil["username"])
-    perfil["youtube"] = youtube
-    if "youtube" in perfil:
-        request = youtube.channels().list(
-            part= "id",
-            mine= True
-            )
-        response = request.execute()["items"] # Devuelve una lista con la información del canal.
-        id_YT: str = response[0]["id"]
-        perfil["id_usuario_youtube"] = id_YT
-    if "youtube" in perfil and "id_usuario_youtube" in perfil:
-        datos_playlists: list = listar_playlistsYT(perfil["youtube"])
-        perfil["playlists_youtube"] = datos_playlists
+    if "spotify" in perfil and "id_usuario_spotify" in perfil:      
+        # Youtube:
+        print("Consiguiendo datos de Youtube...")
+        youtube = validar_permisosYT(perfil["username"])
+        perfil["youtube"] = youtube
+        if "youtube" in perfil:
+            request = youtube.channels().list(
+                part= "id",
+                mine= True
+                )
+            response = request.execute()["items"] # Devuelve una lista con la información del canal.
+            id_YT: str = response[0]["id"]
+            perfil["id_usuario_youtube"] = id_YT
+        if "youtube" in perfil and "id_usuario_youtube" in perfil:
+            datos_playlists: list = listar_playlistsYT(perfil["youtube"])
+            perfil["playlists_youtube"] = datos_playlists
 
 ####################################################################################################
 ####################################################################################################
