@@ -52,13 +52,18 @@ def lista_canciones(info_playlist: dict, lista_cancion: list, servidor: str) -> 
                 artistas.append(info_playlist['tracks'][i]['artists'][j]['name'])
             lista_cancion.append([cancion, ','.join(artistas)])
     if servidor == "youtube":
+        print(info_playlist)
         for i in range(len(info_playlist['tracks'])):
+
             cancion: str = info_playlist['tracks'][i]['name']
             artistas = (info_playlist['tracks'][i]['artists'])
+            cancioncita: str = ""
+            artistis: str = ""
+            cancioncita, artistis = limpieza(cancion, artistas)
             # for j in range(len(info_playlist['tracks'][i]['artists'])):
             #     artistas.append(info_playlist['tracks'][i]['artists'][j])
             # print(artistas)
-            lista_cancion.append([cancion, artistas])
+            lista_cancion.append([cancioncita, artistis])
 
 
 
@@ -94,36 +99,44 @@ def limpieza_yutub(search: dict)->list:
         id: str = i['id']['videoId']
         # titulo real
         # forma del kpop
-        if "&#39;" in titulo:
-            star: int = titulo.find('&')
-            comienzo: int = titulo.find(';')
-            cantante = titulo[0:star]
-            cancion: str = titulo[comienzo + 1:len(titulo)]
-            fin: int = cancion.find('&#39; ')
-            cancion = cancion[0:fin]
-
-        # forma del pop
-        elif "-" in titulo:
-            comienzo: int = titulo.find('-')
-            cantante: str = titulo[0:comienzo - 1]
-            cancion = titulo[comienzo + 2:len(titulo)]
-            if '(' in cancion:
-                fin: int = cancion.find('(')
-                cancion = cancion[0:fin]
-            if '[' in cancion:
-                fin: int = cancion.find('[')
-                cancion = cancion[0:fin]
-        else:
-            cancion: str = titulo
-            cantante: str = search['items'][0]['channelTitle']
-        while '&#39;' in cancion:
-            principito: int = cancion.find('&')
-            final: int = cancion.find(';')
-            apostrofe: str = "'"
-            cancion_corregida: str = cancion[0:principito] + apostrofe + cancion[final + 1:len(cancion)]
-            cancion = cancion_corregida
+        cancion: str = ""
+        cantante:  str = ""
+        cancion,cantante = limpieza(titulo, search['items'][0]['channelTitle'])
         lista_encontrados.append([id, cancion, cantante])
         return lista_encontrados
+
+def limpieza(titulo: str, canal: str)->tuple:
+    if "&#39;" in titulo:
+        star: int = titulo.find('&')
+        comienzo: int = titulo.find(';')
+        cantante = titulo[0:star]
+        cancion: str = titulo[comienzo + 1:len(titulo)]
+        fin: int = cancion.find('&#39; ')
+        cancion = cancion[0:fin]
+
+    # forma del pop
+    elif "-" in titulo:
+        comienzo: int = titulo.find('-')
+        cantante: str = titulo[0:comienzo - 1]
+        cancion = titulo[comienzo + 2:len(titulo)]
+        if '(' in cancion:
+            fin: int = cancion.find('(')
+            cancion = cancion[0:fin]
+        if '[' in cancion:
+            fin: int = cancion.find('[')
+            cancion = cancion[0:fin]
+    else:
+        cancion: str = titulo
+        cantante: str = canal
+    while '&#39;' in cancion:
+        principito: int = cancion.find('&')
+        final: int = cancion.find(';')
+        apostrofe: str = "'"
+        cancion_corregida: str = cancion[0:principito] + apostrofe + cancion[final + 1:len(cancion)]
+        cancion = cancion_corregida
+    return (cancion, cantante)
+
+
 
 
 def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: object, user_id_spotifai: str,
@@ -136,10 +149,7 @@ def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: objec
     # aca se va a guardar la informacion de la lista de youtube
     playlist_yutub: dict = {}
     detalles_yutub: dict = {}
-
     # donde se guardaran las uris para pasarlas
-
-
     while opcion != "1" and opcion != "2":
         opcion = input("Solo hay dos opciones")
     opcion: int = int(opcion)
@@ -148,11 +158,11 @@ def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: objec
         no_se_pudo: dict = sincronizacion_spotify_a_youtube(usuario_actual, playlist_spotifai, detalles_spotifai,
                                      token_yutub, user_id_yutub, playlist_yutub, detalles_yutub,
                                     spotify)
-
     else:
         no_se_pudo: dict = sincronizacion_youtube_a_spotify(usuario_actual, playlist_spotifai, detalles_spotifai,
                                        token_yutub, user_id_spotifai,  playlist_yutub,
                                          detalles_yutub, spotify)
+
     if len(no_se_pudo['no se pudo']) != 0:
         exportar_dict_a_cvs("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
     else:
@@ -186,27 +196,14 @@ def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombr
 
 
 def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
-                                   lista_no_encontrados: list, spotify: object,
-                                   token_youtube: object)-> str:
+                                   lista_no_encontrados: list) -> str:
     id_elegido: str = ""
-    id: list = []
-    lista_encontrados = limpieza_yutub(search, spotify, token_youtube)
-    for i in range(len(lista_encontrados)):
-        if lista_encontrados[i][1] == nombre:
-            if lista_encontrados[i][2] == artista:
-                id.append(lista_encontrados[i][0])
-    for j in range(len(id)):
-        agrego: bool = False
-        for k in range(len(lista_encontrados)):
-            if id[j] == lista_encontrados[k][0]:
-                agrego = True
-        if agrego == False:
-            lista_no_encontrados.append([nombre, artista])
-            id_elegido = "no habemus nada"
-
-        else:
-            id_elegido = id[0]
-            # elijo el primero porque hay millones de videos posibles para una sola cancion
+    if len(search) != 0:
+        for i in search['items']:
+            id_elegido = i['id']['videoId']
+    else:
+        id_elegido = "no habemus nada"
+        lista_no_encontrados.append([nombre, artista])
     return id_elegido
 
 
@@ -231,6 +228,7 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
     if opcion2 == 1:
         # crear lista de youtube
         nombre = crear_playlist_youtube(token_yutub)
+        playlist_id: str = ""
         playlist_id = dame_id_playlist(spotify, token_yutub, user_id_yutub, nombre, "youtube")
         lista_yutub: list = []
     else:
@@ -246,12 +244,11 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
     lista_agregar = comparacion(lista_yutub, lista_spotifai, "spotify")
     print(lista_agregar)
     lista_no_agregado: list = []
-    # uris de las canciones
     for i in range(len(lista_agregar)):
         search = buscar_item(spotify, token_yutub, "youtube",
                              f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
         id: str = comparacion_con_search_youtube(search, lista_agregar[i][0], lista_agregar[i][1],
-                                                 lista_no_agregado, spotify, token_yutub)
+                                                 lista_no_agregado)
         print(id)
         if id != "no habemus nada":
             agregar_cancion_a_youtube(playlist_id, id, token_yutub)
@@ -275,13 +272,15 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
 
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
                                      token_yutub: object, user_id_spotifai: str, playlist_yutub: dict,
-                                     detalles_yutub: dict, spotify: object) -> dict:
+                                     detalles_yutub: dict, spotify: object,
+                                     playlist_emerg:dict={}, emergencia:bool= False) -> dict:
     # A ESTE PUNTO LA PROGRAMADORA SE ESTA PREGUNTANDO SI ES BUENA IDEA SEGUIR VIVIENDO
     playlist_id: str = ""
     lista_yutub: list = []
     # youtube a spotify
-    print_playlists_de_user(usuario_actual, "youtube")
-    seleccionar_playlist(usuario_actual, playlist_yutub, "youtube")
+    if not emergencia:
+        print_playlists_de_user(usuario_actual, "youtube")
+        seleccionar_playlist(usuario_actual, playlist_yutub, "youtube")
     # recibo la informacion de la lista elegida
     importar_playlist(spotify, token_yutub, playlist_yutub['id'], playlist_yutub['name'],
                       "youtube", detalles_yutub)
@@ -302,7 +301,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
         print_playlists_de_user(usuario_actual, "spotify")
         seleccionar_playlist(usuario_actual, playlist_spotifai, "spotify", True)
         # recibo la informacion de la lista elegida
-        importar_playlist(spotify, token_yutub, playlist_yutub['id'], playlist_yutub['name'],
+        importar_playlist(spotify, token_yutub,playlist_spotifai['id'], playlist_spotifai['name'],
                           "spotify", detalles_spotifai)
         lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
         playlist_id = detalles_spotifai['id']
@@ -315,10 +314,16 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     for i in range(len(lista_agregar)):
         search = buscar_item(spotify, token_yutub, "spotify",
                              f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
+
+
         comparacion_con_search_spotify(search, lista_agregar[i][0], lista_agregar[i][1], uris,
                                        lista_no_agregado)
         # se agrega las canciones encontradas
-    agregar_cancion_a_spotify(playlist_id, uris, spotify)
+    try:
+        agregar_cancion_a_spotify(playlist_id, uris, spotify)
+    except tk.BadRequest:
+        print("Upsi! Ninguna canción de las que estaban en su lista fueron encontradas en Spotify")
+
     no_se_pudo: dict = {}
     no_se_pudo['no se pudo'] = lista_no_agregado
 
@@ -329,56 +334,58 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
 
 
 def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> None:
-    print("Hola en esta seccion tenemos imagenes de palabras, si desea hacerlo con una playlist\n"
-          "de youtube marque (2) de lo contrario (1)")
+    print("Hola en esta seccion tenemos imagenes de palabras marque: \n"
+          "[1] si desea hacerlo con una playlist de spotify \n"
+          "[2]  de lo contrario ")
     opcion: str = input(">>>> ")
+    detalles: dict = {}
+    mi_playlist: dict = {}
     while opcion != "1" and opcion != "2":
         opcion = input(" suspiro..... Vamos de nuevo (1) o (2)")
     opcion: int = int(opcion)
-
-    detalles: dict = {}
-    mi_playlist: dict = {}
     if opcion == 1:
         print_playlists_de_user(usuario_actual, "spotify")
         seleccionar_playlist(usuario_actual, mi_playlist, "spotify")
         importar_playlist(spotify, token_youtube, mi_playlist['id'], mi_playlist['name'], "spotify", detalles)
+        servidor: str = "spotify"
     elif opcion == 2:
         print_playlists_de_user(usuario_actual, "youtube")
         seleccionar_playlist(usuario_actual, mi_playlist, "youtube")
         print("Puede ser que este resultado sea bastate malo, le recomiendo pasar la lista a spotify para un"
               "mejor rendimiento :)")
         importar_playlist(spotify, token_youtube, mi_playlist['id'], mi_playlist['name'], "youtube", detalles)
-    print(detalles)
+        servidor: str = "youtube"
     letra_total: str = ""
     print("Esto va a tomar un tiempo, por favor imagine musica de ascensor\n"
           "tu tuutututut tuut utututu")
-    rejunte_letras(detalles, letra_total)
-    print("\n\nEsta es tu letra")
-    print(letra_total)
-    al_wordcloud(letra_total, usuario_actual['username'], mi_playlist['id'])
-
-    mostrame_esta(usuario_actual['username'], mi_playlist['id'])
+    letra_total = rejunte_letras(detalles, servidor)
+    try:
+        al_wordcloud(letra_total, usuario_actual['username'], mi_playlist['id'])
+        mostrame_esta(usuario_actual['username'], mi_playlist['id'])
+    except TimeoutError:
+        print("Ouh no! Hubo un error y se supero el tiempo de espera, sepa disculpar")
 
 
 def al_wordcloud(letra_total: str, usuario:str, id_playlist:str) -> None:
-    jsonito = json.dumps(letra_total, indent=3)
+    jsonito = json.dumps(letra_total)
     resp = requests.post('https://quickchart.io/wordcloud', json={
-        'format': 'png',
-        'width': 1000,
-        'height': 1000,
-        'fontScale': 15,
-        'scale': 'linear',
-        'maxNumWords': 10,
-        'removeStopwords': True,
-        'minWordLength': 6,
-        'text': jsonito,
-    })
+        "format": "png",
+        "width": 1000,
+        "height": 1000,
+        "fontFamily": "serif",
+        "fontScale": 15,
+        "scale": "linear",
+        "maxNumWords": 10,
+        'minWordLength': 4,
+        "removeStopwords": True,
+        "text": jsonito,
+            })
 
     with open(f'wordcloud_{usuario}_{id_playlist}.png', 'wb') as f:
         f.write(resp.content)
 
 
-def mostrame_esta(usuario:str, id_playlist:str) -> None:
+def mostrame_esta(usuario: str, id_playlist: str) -> None:
     img = cv.imread(f'wordcloud_{usuario}_{id_playlist}.png')
     cv.imwrite('modified_img.jpg', img, [int(cv.IMWRITE_JPEG_QUALITY), 100])
     plt.imshow(img)
@@ -580,6 +587,7 @@ def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, pla
         response = request.execute()
         for item in response['items']: #lista de dicts
             info_playlist.append(item)
+
         normalizar_playlist_youtube(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
 
 
@@ -663,9 +671,16 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
         print("Podemos sincronizar con spotify y realizar el analisis de las canciones que estén en esa plataforma.")
         sincronizar:str = input("[S] aceptar \nCualquier [Tecla] volver\n     >>>   ").lower()
         if sincronizar == "s":
-            sincronizacion_youtube_a_spotify()
-            pass #!!! TO-DO
+            sincronizacion_de_emergencia(usuario_actual, mi_playlist)
 
+
+def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
+    temp_spotify: dict = dict()
+    detalles_spotify: dict = dict()
+    detalles_youtube: dict = dict()
+    sincronizacion_youtube_a_spotify(usuario_actual, temp_spotify, detalles_spotify,
+                                     usuario_actual['youtube'], usuario_actual['id_usuario_youtube'],
+                                     mi_playlist, detalles_youtube, usuario_actual['spotify'])
 
 
 ### ------------------------ BÚSQUEDA DE CANCIONES ------------------------------------------------
@@ -744,7 +759,6 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
         search = search.execute()
 
     return search
-
 
 
 ### ------------------------ ACCIONES POSTERIORES A BÚSQUEDA --------------------------------------
@@ -930,12 +944,20 @@ def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
     return letra_song
 
 
-def rejunte_letras(detalles: dict, total_letrasas: str) -> None:
+def rejunte_letras(detalles: dict, servidor: str) -> str:
+    total_letrasas: str = ""
     token_genius = ingreso_genius()
-    for cancioncita in range(len(detalles['tracks'])):
-        letra: str = extraer_letra(token_genius, detalles['tracks'][cancioncita]['name'],
-                                   detalles['tracks'][cancioncita]['artists'])
-        total_letrasas = total_letrasas + letra
+    if servidor == "spotify":
+        for cancioncita in range(len(detalles['tracks'])):
+            letra: str = extraer_letra(token_genius, detalles['tracks'][cancioncita]['name'],
+                                       detalles['tracks'][cancioncita]['artists'][0]['name'])
+            total_letrasas = total_letrasas + letra
+    elif servidor == "youtube":
+        for cancioncita in range(len(detalles['tracks'])):
+            cancion, artista = limpieza(detalles['tracks'][cancioncita]['name'], detalles['tracks'][cancioncita]['artists'])
+            letra: str = extraer_letra(token_genius, cancion, artista)
+            total_letrasas = total_letrasas + letra
+    return total_letrasas
 
 
 ###------------------------- LISTADO DE PLAYLISTS  -------------------------------------------------
