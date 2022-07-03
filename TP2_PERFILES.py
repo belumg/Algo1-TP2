@@ -8,6 +8,9 @@ import os
 import json
 import TP2_VISUAL as vis
 
+####################################################################################################
+####################################################################################################
+
 SCOPE: tk.Scope = tk.scope.every
 
 ####################################################################################################
@@ -20,6 +23,7 @@ def input_num_con_control(min:int, max:int) -> int:
         seleccion: str = input("Inválido. Vuelva a ingresar >>>  ")
     return int(seleccion)
 
+
 def input_con_control(palabras_permitidas: list, mensaje: str) -> str:
     """Devuelve un string que se encuentra entre las palabras permitidas."""
     print(mensaje)
@@ -31,10 +35,11 @@ def input_con_control(palabras_permitidas: list, mensaje: str) -> str:
 ######################### AUTENTICAR SPOTIFY #######################################################
 ####################################################################################################
 
-def autenticar_spotify(credenciales_SP: tuple) -> str:
+def autenticar_spotify() -> str:
     """Devuelve un refresh_token si la autenticacion salio bien, caso contrario devuelve un string vacio."""
     refresh_token: str = ""
-    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(credenciales_SP[0], credenciales_SP[1], credenciales_SP[2])
+    credenciales_SP: tuple = tuple(sacar_info_json("credenciales.json")["spotify"].values())
+    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(*credenciales_SP)
     auth: tk.UserAuth = tk.UserAuth(credenciales, SCOPE)
     print(vis.INSTRUCCIONES)
     input("Presione Enter para que se abra Spotify: ")
@@ -54,7 +59,8 @@ def autenticar_spotify(credenciales_SP: tuple) -> str:
 ######################### AUTENTICAR YOUTUBE #######################################################
 ####################################################################################################
 
-def autenticarYT() -> object:   # REVISAR, DEVUELVE STRING CUANDO FALLA
+def autenticarYT() -> object:
+    """ Autentica a un determinado usuario en la plataforma Youtube """
     permisos = ""
     scopes = ["https://www.googleapis.com/auth/youtube"]
 
@@ -120,7 +126,7 @@ def nombre_perfil() -> str:
     return nombre
 
 
-def nuevo_perfil(credenciales_SP: tuple):
+def nuevo_perfil():
     """Guarda el perfil solo si acepto los permisos de al menos una plataforma."""
     nombre: str = nombre_perfil()
     opciones_elegidas: list = []
@@ -133,7 +139,7 @@ def nuevo_perfil(credenciales_SP: tuple):
             if obj_youtube:
                 opciones_elegidas.append(opcion)
         elif opcion == 2:
-            refresh_token: str = autenticar_spotify(credenciales_SP)
+            refresh_token: str = autenticar_spotify()
             if refresh_token:
                 opciones_elegidas.append(opcion)
         elif opcion == 3 and opciones_elegidas and (1 not in opciones_elegidas or 2 not in opciones_elegidas):
@@ -152,11 +158,11 @@ def nuevo_perfil(credenciales_SP: tuple):
 
 def nombres_perfiles_guardados() -> list:
     """Devuelve los nombres que estan el archivo json de los perfiles, si no lo encuentra devuelve una lista vacia."""
-    if not os.path.isfile("datos_perfiles.json"):
-        return []
-    with open("datos_perfiles.json") as f:
-        datos = json.load(f)
-        return list(datos.keys())
+    nombres_perfiles: list = []
+    if os.path.isfile("datos_perfiles.json"):
+        datos: dict = sacar_info_json("datos_perfiles.json")
+        nombres_perfiles: list = list(datos.keys())
+    return nombres_perfiles
 
 
 def elegir_perfil(perfil: dict) -> str:
@@ -165,25 +171,27 @@ def elegir_perfil(perfil: dict) -> str:
     Post: Se le imprime un lista de perfiles y devuelve un string con el perfil elegido.
           Si no eligio, no hubo perfiles para elegir o si eligio el perfil actual entonces devuelve un string vacio.
     """
-    perfil_elegido: str = ""
     nombres_perfiles: list = nombres_perfiles_guardados()
     nombres_perfiles.append("NO ELEGIR PERFIL")
-    if len(nombres_perfiles) == 1:
+    if not len(nombres_perfiles) == 1:
+        vis.visual_lista_elementos(nombres_perfiles, "Perfiles Guardados", True)
+        opcion: int = input_num_con_control(1,len(nombres_perfiles))
+        if (opcion == len(nombres_perfiles) or
+            (perfil["username"] and
+            perfil["username"] == nombres_perfiles[opcion-1])):
+            # Si la opcion elegida es salir o volvio a elegir el mismo perfil.
+            perfil_elegido: str = ""
+        else:
+            perfil_elegido: str = nombres_perfiles[opcion-1]
+    else:
+        perfil_elegido: str = ""
         print(vis.NO_PERFILES)
-        return perfil_elegido
-    vis.visual_lista_elementos(nombres_perfiles, "Perfiles Guardados", True)
-    opcion = input_num_con_control(1,len(nombres_perfiles))
-    if opcion == len(nombres_perfiles):
-        return perfil_elegido
-    if perfil["username"] and perfil["username"] == nombres_perfiles[opcion-1]:   # Para que no elija el mismo perfil cuando hace el cambio de perfil.
-        return perfil_elegido
-    perfil_elegido: str = nombres_perfiles[opcion-1]
     return perfil_elegido
 
 ####################################################################################################
 ####################################################################################################
 
-def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
+def manejo_perfiles(perfil: dict):
     """
     Genera un menu para crear y guardar perfiles junto con la opcion de elegir uno de los perfiles guardados.
     Si eligio un perfil entonces el nombre se guardara en el diccionario recibido.
@@ -198,7 +206,7 @@ def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
                 if perfil["username"]: perfil.clear()
                 perfil["username"] = perfil_elegido
         elif opcion == 2:
-            nuevo_perfil(credenciales_SP)
+            nuevo_perfil()
         else:
             terminar: bool = True
 
@@ -206,7 +214,8 @@ def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
 ####################################################################################################
 
 def validar_permisosYT(usuario: str) -> object:
-
+    """ Corrobora que las credenciales para hacer solicitdudes a la API estén vigente.
+    En caso de que no lo estén, solicita nuevas y genera un nuevo cliente. """
     datos: dict = sacar_info_json("datos_perfiles.json")
 
     # Me guardo las claves que generó el usuario del perfil para YouTube.
@@ -243,11 +252,11 @@ def validar_permisosYT(usuario: str) -> object:
 
 def obtener_refresh_token_perfil(nombre: str) -> str:
     """Devuelve el refresh_token del nombre recibido, si el archivo de donde lo saca no esta entonces devuelve un str vacio."""
-    if not os.path.isfile("datos_perfiles.json"):
-        return ""
-    with open("datos_perfiles.json") as f:
-        datos = json.load(f)
-    return datos[nombre]["spotify"]
+    datos_token: str = ""
+    if os.path.isfile("datos_perfiles.json"):
+        datos: dict = sacar_info_json("datos_perfiles.json")
+        datos_token: str = datos[nombre]["spotify"]
+    return datos_token
 
 
 def listar_playlistsYT(youtube: object) -> dict:
@@ -264,28 +273,23 @@ def listar_playlistsYT(youtube: object) -> dict:
     return response['items']
 
 
-def datos_playlists_SP(spotify, id_usuario):
+def datos_playlists_SP(spotify: tk.Spotify, id_usuario: str) -> list:
     """
     Pre: Recibe un objeto spotify (ya con los datos de nuestro perfil elegido) y el id de Spotify del perfil actual.
     Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
     """
-    datos = []
-    datos_playlists = probando(spotify.playlists, [id_usuario])  # Que pasa si el usuario no tiene playlists?
-    if not datos_playlists:
-        return datos
-    for playlist in datos_playlists.items:
-        datos_playlist: dict = {}
-        datos_playlist["name"] = playlist.name
-        datos_playlist["id"] = playlist.id
-        datos_playlist["collaborative"] = playlist.collaborative
-        datos_playlist["description"] = playlist.description
-        """
-        canciones = []
-        for cancion in spotify.playlist_items(playlist.id).items:
-            canciones.append(cancion.track.name)
-        diccionario["tracks"] = canciones
-        """
-        datos.append(datos_playlist)
+    datos: list = []
+    datos_playlists = probando(spotify.playlists, [id_usuario])
+    if datos_playlists.items:  # Si hay playlists
+        for playlist in datos_playlists.items:
+            datos_playlist: dict = {}
+            datos_playlist["name"] = playlist.name
+            datos_playlist["id"] = playlist.id
+            datos_playlist["collaborative"] = playlist.collaborative
+            datos_playlist["description"] = playlist.description
+            datos.append(datos_playlist)
+    elif datos_playlists: # Si no hay playlists
+        datos.append("SIN PLAYLISTS")
     return datos
 
 ######################### AGREGARLE DATOS AL PERFIL ################################################
@@ -314,16 +318,18 @@ def probando(funcion_a_probar, datos_que_necesita: list = []):
             terminar: bool = True
     return dato_buscado
 
-def datos_necesarios_perfil(perfil: dict, credenciales_SP: tuple) -> None:
+
+def datos_necesarios_perfil(perfil: dict) -> None:
     """Le agrega datos sobre las plataformas al perfil recibido."""
     # Spotify:
     refresh_token = obtener_refresh_token_perfil(perfil["username"])
     if refresh_token:
         print("Consiguiendo datos de Spotify...")
+        credenciales_SP: tuple = tuple(sacar_info_json("credenciales.json")["spotify"].values())
         datos_necesarios: list = [credenciales_SP[0], credenciales_SP[1], refresh_token] 
         token = probando(tk.refresh_user_token, datos_necesarios)
         if token:
-            spotify = tk.Spotify(token)
+            spotify: tk.Spotify = tk.Spotify(token)
             perfil["spotify"] = spotify
     if "spotify" in perfil:
         id_usuario: str = probando(spotify.current_user)
@@ -331,46 +337,45 @@ def datos_necesarios_perfil(perfil: dict, credenciales_SP: tuple) -> None:
             perfil["id_usuario_spotify"] = id_usuario.id
     if "spotify" in perfil and "id_usuario_spotify" in perfil:
         datos_playlists: list = datos_playlists_SP(perfil["spotify"], perfil["id_usuario_spotify"])
-        if datos_playlists:
+        if datos_playlists and datos_playlists[0] != "SIN PLAYLISTS":
             perfil["playlists_spotify"] = datos_playlists
-
-    # Youtube:
-    print("Consiguiendo datos de Youtube...")
-    youtube = validar_permisosYT(perfil["username"])
-    perfil["youtube"] = youtube
-    if "youtube" in perfil:
-        request = youtube.channels().list(
-            part= "id",
-            mine= True
-            )
-        response = request.execute()["items"] # Devuelve una lista con la información del canal.
-        id_YT: str = response[0]["id"]
-        perfil["id_usuario_youtube"] = id_YT
-    if "youtube" in perfil and "id_usuario_youtube" in perfil:
-        datos_playlists: list = listar_playlistsYT(perfil["youtube"])
-        perfil["playlists_youtube"] = datos_playlists
+        elif datos_playlists and datos_playlists[0] == "SIN PLAYLISTS":
+            perfil["playlists_spotify"] = []     
+        # Youtube:
+        print("Consiguiendo datos de Youtube...")
+        youtube = validar_permisosYT(perfil["username"])
+        perfil["youtube"] = youtube
+        if "youtube" in perfil:
+            request = youtube.channels().list(
+                part= "id",
+                mine= True
+                )
+            response = request.execute()["items"] # Devuelve una lista con la información del canal.
+            id_YT: str = response[0]["id"]
+            perfil["id_usuario_youtube"] = id_YT
+        if "youtube" in perfil and "id_usuario_youtube" in perfil:
+            datos_playlists: list = listar_playlistsYT(perfil["youtube"])
+            perfil["playlists_youtube"] = datos_playlists
 
 ####################################################################################################
 ####################################################################################################
 
-def datos_agregados_correctamente(usuario_actual: dict, credenciales_SP: tuple) -> bool:
+def datos_agregados_correctamente(usuario_actual: dict) -> bool:
     """
-    Pre: Recibe un diccionario con los datos del perfil actual.
-    Post: Devuelve un False si encuentra que falta un dato importante.
+    Pre: Recibe un diccionario con los datos asociados al usuario.
+    Post: Devuelve False si encuentra que falta un dato necesario.
     """
-    if not usuario_actual["username"]:
-        return False
-    datos_necesarios_perfil(usuario_actual, credenciales_SP)
-    if "spotify" not in usuario_actual:
-        return False
-    elif "id_usuario_spotify" not in usuario_actual:
-        return False
-    elif "playlists_spotify" not in usuario_actual:
-        return False
-    elif "youtube" not in usuario_actual:
-        return False
-    elif "id_usuario_youtube" not in usuario_actual:
-        return False
-    elif "playlists_youtube" not in usuario_actual:
-        return False
-    return True
+    if usuario_actual["username"]:
+        datos_buscar: list = [
+            "spotify",
+            "id_usuario_spotify",
+            "playlists_spotify",
+            "youtube",
+            "id_usuario_youtube",
+            "playlists_youtube"
+            ]
+        datos_necesarios_perfil(usuario_actual)
+        estan_todos_los_datos: bool = all([dato in usuario_actual for dato in datos_buscar])
+    else:
+        estan_todos_los_datos: bool = False
+    return estan_todos_los_datos
