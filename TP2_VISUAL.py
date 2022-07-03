@@ -1,5 +1,6 @@
 LONGITUD: int = 45
 
+
 LOGO_INICIO: str = """
     ╔════════════════════════════════════════════════════════════╗
         ⠀⠀⠀⢲⣦⠀⢠⣶⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀      ⠀⠀⠀⠀⠀⠀⠀⢀⣠⣤⣤⣶⣶⣶⣶⣤⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀  
@@ -17,6 +18,7 @@ LOGO_INICIO: str = """
         ⠙⠻⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠟⠋      ⠀⠀⠀⠀⠀⠀⠀⠈⠙⠛⠛⠿⠿⠿⠿⠛⠛⠋⠁
     ╚════════════════════════════════════════════════════════════╝
 """
+
 
 def inicio() -> None:
     """Imprime el logo del software."""
@@ -44,7 +46,6 @@ def menu_perfiles(perfil: str) -> None:
                 █▄─▀█▀─▄█▄─▄▄─█▄─▀█▄─▄█▄─██─▄█
                 ██─█▄█─███─▄█▀██─█▄▀─███─██─██
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
-
          ╔══════════════════════════════════════════╗
                                                             
           [1] {mensaje_seleccionar}                                    
@@ -52,27 +53,28 @@ def menu_perfiles(perfil: str) -> None:
           [2] Ingresar perfil.                              - {mensaje_perfil}
 
           [3] {mensaje}
-
+          
          ╚══════════════════════════════════════════╝  
     """)
 
 
-def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = [], ambas: bool = False) -> None:
+def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = [], mostar_ambas: bool = False) -> None:
     """
-    Pre: Recibe un bool y una lista.
+    Pre: Recibe 2 bool y una lista.
     Post: Imprime un menu que tiene 3 valores que variaran segun los datos recibidos por parametro.
-          Si el bool es True entonces apareceran los mensajes relacionados con perfiles.
-          Caso contrario solo sera un menu simple que te da la opcion de volver al menu original.
+          Si el crear_perfil es True entonces apareceran los mensajes relacionados con perfiles.
+          Si mostrar_ambas es True entonces le dara la opcion de elegir las dos plataformas.
+          Si ambas son False entonces solo sera un menu simple que te da la opcion de volver al menu original.
     """
     youtube: str = ""
     spotify: str = ""
     if crear_perfil and opciones_elegidas:
         mensaje: str = "Crear perfil"
-        if 1 in opciones_elegidas: youtube: str = "--> Permisos aceptados"  # REVISAR (PONER UN MEJOR STRING)
+        if 1 in opciones_elegidas: youtube: str = "--> Permisos aceptados" 
         if 2 in opciones_elegidas: spotify: str = "--> Permisos aceptados"
     elif crear_perfil and not opciones_elegidas:
         mensaje: str = "No crear perfil"
-    elif ambas:
+    elif mostar_ambas:
         mensaje: str = "Mostrar ambas"
     else:
         mensaje: str = "Volver al menu"
@@ -85,6 +87,7 @@ def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = [], am
         [3] {mensaje}
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """)
+
 
 NOMBRE_NO_VALIDO: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -196,29 +199,39 @@ MENU: str = """
                 ██─█▄█─███─▄█▀██─█▄▀─███─██─██
                 ▀▄▄▄▀▄▄▄▀▄▄▄▄▄▀▄▄▄▀▀▄▄▀▀▄▄▄▄▀▀
          ╔══════════════════════════════════════════╗
+
           [1] Listar las playlist actuales
+
           [2] Exportar analisis de playlist a CSV
+
           [3] Crear nueva playlist
+
           [4] Buscar y administrar canciones
+
           [5] Sincronizar playlist 
+
           [6] Nube de palabras de playlist 
+
           [7] Cambiar de perfil
+
           [0] Salir
+
          ╚══════════════════════════════════════════╝  
     """
 
 NO_INTERNET: str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓   
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 
          ▄██████████████▄▐█▄▄▄▄█▌
          ██████▌▄▌▄▐▐▌███▌▀▀██▀▀
          ████▄█▌▄▌▄▐▐▌▀███▄▄█▌
          ▄▄▄▄▄██████████████▀
+
        [NO HAY CONEXION A INTERNET]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-def falta_archivo(nombre_plataforma: str) -> None:
+def falta_archivo() -> None:
     """Imprime un mensaje que le avisa al usuario que archivo le falta para que el software se pueda ejecutar."""
     print(f"""
 ⠄⠄⠄⠄⠄⠄⢀⣠⣤⣶⣶⣶⣤⣄⠄⠄⢀⣠⣤⣤⣤⣤⣀⠄⠄⠄⠄⠄⠄⠄
@@ -228,7 +241,7 @@ def falta_archivo(nombre_plataforma: str) -> None:
 ⣠⡄⣿⣿⣿⣿⣿⣿⣿⠿⢟⣛⣫⣭⠉⠍⠉⣛⠿⡘⣿⠿⢟⣛⡛⠉⠙⠻⢿⡄    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣶⣶⣶⣶⣶⣶⣶⣭⣍⠄⣡⣬⣭⣭⣅⣈⣀⣉⣁⠄            [FALTA UN ARCHIVO]
 ⣿⣿⣿⣿⣿⣿⣿⣿⣶⣭⣛⡻⠿⠿⢿⣿⡿⢛⣥⣾⣿⣿⣿⣿⣿⣿⣿⠿⠋⠄      Necesitamos el archivo:
-⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣩⣵⣾⣿⣿⣯⣙⠟⣋⣉⣩⣍⡁⠄⠄⠄        - "credenciales_{nombre_plataforma}.json"
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣩⣵⣾⣿⣿⣯⣙⠟⣋⣉⣩⣍⡁⠄⠄⠄        - "credenciales.json"
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣷⡄⠄⠄        Sin ese archivo no podemos
 ⣿⣿⣿⣿⣿⣿⡿⢟⣛⣛⣛⣛⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⡀⠄           ejecutar el software 
 ⣿⣿⣿⣿⣿⡟⢼⣿⣯⣭⣛⣛⣛⡻⠷⠶⢶⣬⣭⣭⣭⡭⠭⢉⡄⠶⠾⠟⠁⠄    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -256,3 +269,9 @@ DE_QUE_LADO: str = """
         [3] Volver al menu
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
+
+PLAYLIST_CREADA: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+      [PLAYLIST CREADA EXITOSAMENTE]
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
