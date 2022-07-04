@@ -98,6 +98,7 @@ NOMBRE_NO_VALIDO: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
+
 INSTRUCCIONES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
               [INSTRUCCIONES]
@@ -106,6 +107,7 @@ INSTRUCCIONES: str = """
      - Copiar nueva URL.
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
 
 ERROR_URL: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -117,11 +119,13 @@ ERROR_URL: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
+
 DATOS_GUARDADOS: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
       [DATOS GUARDADOS EXITOSAMENTE]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
 
 NO_PERFILES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -153,14 +157,6 @@ def visual_lista_elementos(lista_mostrar: list, mensaje: str, enumerar: bool) ->
         input(" Presione Enter para volver al menu: ")
 
 
-NO_PLAYLIST :str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-        No se encontraron playlists   
-         guardadas en esta cuenta.
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
-
-
 def mostrar_cancion(cancion: dict, orden: int, titulo: str = "") -> None:
     print(f"""     {titulo}
         ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -170,6 +166,7 @@ def mostrar_cancion(cancion: dict, orden: int, titulo: str = "") -> None:
          Album: {cancion['album']}
         ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
         """)
+
 
 def mostrar_nombre_vid(cancion: dict, orden: int, titulo: str = "") -> None:
     print(f"""     {titulo}
@@ -219,6 +216,7 @@ MENU: str = """
          ╚══════════════════════════════════════════╝  
     """
 
+
 NO_INTERNET: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 
@@ -230,6 +228,7 @@ NO_INTERNET: str = """
        [NO HAY CONEXION A INTERNET]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
 
 def falta_archivo() -> None:
     """Imprime un mensaje que le avisa al usuario que archivo le falta para que el software se pueda ejecutar."""
@@ -251,6 +250,7 @@ def falta_archivo() -> None:
 ⣿⣿⣿⣿⣷⣶⣦⣭⣭⣭⣭⣭⣭⣥⣶⣶⣶⡆⣿⣾⣿⣿⣿⣷⣿⣸⠉⣷⠄⠄
 """)
 
+
 def falta_plataforma(nombre_plataforma: str) -> None:
     """Imprime un mensaje que le avisa al usuario que le falta dar permisos a una plataforma."""
     print(f"""
@@ -261,6 +261,18 @@ def falta_plataforma(nombre_plataforma: str) -> None:
     - Faltan los permisos de: {nombre_plataforma}
     """)
 
+
+def no_playlist(plataforma: str): 
+    """Imprime el mensaje de que el usuario no tiene playlists en la plataforma recibida."""
+    plataforma: str = plataforma.upper()
+    print(f"""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+          NO TIENES PLAYLISTS EN         
+          LA PLATAFORMA: {plataforma}     
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+""")
+
+
 DE_QUE_LADO: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
                  Elegir:               
@@ -269,6 +281,7 @@ DE_QUE_LADO: str = """
         [3] Volver al menu
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
+
 
 PLAYLIST_CREADA: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
