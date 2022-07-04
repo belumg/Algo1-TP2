@@ -24,12 +24,16 @@ def input_num_con_control(min:int, max:int) -> int:
     return int(seleccion)
 
 
-def input_con_control(palabras_permitidas: list, mensaje: str) -> str:
+def input_con_control(palabras_permitidas: list, mensaje: str, cansancio: int = 100, mensaje_cansancio: str = "") -> str:
     """Devuelve un string que se encuentra entre las palabras permitidas."""
     print(mensaje)
+    intentos: int = 0
     seleccion: str = input("      >>>    ").lower()
     while seleccion not in palabras_permitidas:
+        if intentos > cansancio:
+            print(mensaje_cansancio)
         seleccion: str = input("Inválido. Vuelva a ingresar >>>  ").lower()
+        intentos += 1
     return seleccion
 
 ######################### AUTENTICAR SPOTIFY #######################################################
@@ -272,6 +276,16 @@ def listar_playlistsYT(youtube: object) -> dict:
     return response['items']
 
 
+def ordenar_datos_playlist_SP(playlist) -> dict:            # Falta typing
+    """Recibe un objeto y ..."""                               # Falta  documentacion
+    datos_playlist: dict = {}
+    datos_playlist["name"] = playlist.name
+    datos_playlist["id"] = playlist.id
+    datos_playlist["collaborative"] = playlist.collaborative
+    datos_playlist["description"] = playlist.description
+    return datos_playlist
+
+
 def datos_playlists_SP(spotify: tk.Spotify, id_usuario: str) -> list:
     """
     Pre: Recibe un objeto spotify (ya con los datos de nuestro perfil elegido) y el id de Spotify del perfil actual.
@@ -281,11 +295,7 @@ def datos_playlists_SP(spotify: tk.Spotify, id_usuario: str) -> list:
     datos_playlists: list = probando(spotify.playlists, [id_usuario, 50])
     if datos_playlists[0].items:  # Si hay playlists
         for playlist in datos_playlists[0].items:
-            datos_playlist: dict = {}
-            datos_playlist["name"] = playlist.name
-            datos_playlist["id"] = playlist.id
-            datos_playlist["collaborative"] = playlist.collaborative
-            datos_playlist["description"] = playlist.description
+            datos_playlist: dict = ordenar_datos_playlist_SP(playlist)
             datos.append(datos_playlist)
     elif datos_playlists: # Si no hay playlists
         datos.append("SIN PLAYLISTS")
@@ -310,7 +320,7 @@ def probando(funcion_a_probar, datos_que_necesita: list = []) -> list:
         except:
             print(vis.NO_INTERNET)
             print(" Necesitamos internet para acceder a los datos de su perfil.")
-            intentar: str = input_con_control(["si", "no"], "Desea intentarlo de nuevo(si/no)?  ")
+            intentar: str = input_con_control(["si", "no"], "Desea intentarlo de nuevo(si/no)?  ", 10, "Esta costando mucho.")
             if intentar == "no":
                 terminar: bool = True
         else:
