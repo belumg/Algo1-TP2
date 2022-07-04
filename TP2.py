@@ -1,69 +1,148 @@
 import matplotlib.pyplot as plt
 import cv2 as cv
 import tekore as tk
-from webbrowser import open as web_open
-import TP2_VISUAL as vis
 from tekore import Spotify
 import requests
 from lyricsgenius import Genius
-import time
 import csv
 import os
 from datetime import date
 import json
-import google_auth_oauthlib.flow
-import google.auth.transport.requests
-import googleapiclient.discovery
-import googleapiclient.errors
 import youtube_dl
-
-
-#### ----------------------------- CREDENTIALS SPOTIFY  -------------------------------------------
-###################################################################################################
-
-SCOPE: tk.Scope = tk.scope.every
-
+import TP2_PERFILES as perf
+import TP2_VISUAL as vis
 
 ###################################################################################################
 
 def input_num_con_control(min:int, max:int) -> int:
-#Recibe el rango de valores que puede tomar un menu de opciones numericas (minimo y maximo)
-#devuelve el input como int, comprobado que el ingreso sea correcto
+    #Recibo el rango de opciones para un menu numerico
+    #Devuelve una opción en ese rango como int
     seleccion = input("      >>>    ")
-    while not seleccion.isnumeric() or int(seleccion)>max or int(seleccion)<min:
+    while not seleccion.isnumeric() or int(seleccion) > max or int(seleccion) < min:
         seleccion = input("Inválido. Vuelva a ingresar >>> ")
-
     seleccion = int(seleccion)
     return seleccion
+
+### ----------------------- CONSEGUIR PLAYLISTS (YT/SP) -------------------------------------------
+###################################################################################################
+
+def listar_playlistsYT(youtube: object) -> dict:
+    """ Recupera la data de todas las playlists que tiene un usuario en Youtube """
+    request = youtube.playlists().list(
+                    part="snippet,id,status,contentDetails",
+                    maxResults=50,
+                    mine=True
+                    )
+    response = request.execute()
+    # En caso de que haya más de 50 resultados: 
+    nextPageToken = response.get("nextPageToken")
+    while ("nextPageToken" in response):
+        nextPage = youtube.playlists().list(
+                        part="snippet",
+                        maxResults="50",
+                        pageToken=nextPageToken
+                        ).execute()
+        response["items"] = response["items"] + nextPage["items"]
+
+        if "nextPageToken" not in nextPage:
+            response.pop("nextPageToken", None)
+        else:
+            nextPageToken = nextPage["nextPageToken"]
+    return response['items']
+
+def ordenar_datos_playlist_YT(playlist) -> dict:
+    """Recibe un objeto con los datos de la playlist y devuelvo un diccionario solo con los que necesitamos."""
+    datos_playlist: dict = {}
+    datos_playlist["nombre"] = playlist["snippet"]["title"]
+    datos_playlist["id"] = playlist["id"]
+    datos_playlist["collaborative"] = playlist["status"]["privacyStatus"]
+    datos_dueño_playlist: dict = {
+        "nombre": playlist["snippet"]["channelTitle"],
+        "id": playlist["snippet"]["channelId"],
+        "uri": "desconocido"
+    }
+    datos_playlist["dueño"] = datos_dueño_playlist
+    datos_playlist["cant_tracks"] = playlist["contentDetails"]["itemCount"]
+    return datos_playlist    
+
+
+def datos_playlists_YT(youtube: object) -> list:
+    """ Consigue el id, nombre, descripción y estado (publica o privada) de todas las playlists 
+    del usuario para el que se haya solicitado """
+    datos: list = []
+    data_response: dict = listar_playlistsYT(youtube)
+    for i in range(len(data_response)):
+        datos_playlist: dict = ordenar_datos_playlist_YT(data_response[i])
+        datos.append(datos_playlist)
+    return datos
+
+
+def ordenar_datos_playlist_SP(playlist) -> dict:            # Falta typing
+    """Recibe un objeto con los datos de la playlist y devuelvo un diccionario solo con los que necesitamos."""
+    datos_playlist: dict = {}
+    datos_playlist["nombre"] = playlist.name
+    datos_playlist["id"] = playlist.id
+    datos_playlist["collaborative"] = playlist.collaborative
+    datos_dueño_playlist: dict = {
+        "nombre": playlist.owner.display_name,
+        "id": playlist.owner.id,
+        "uri": playlist.owner.uri
+    }
+    datos_playlist["dueño"] = datos_dueño_playlist
+    datos_playlist["cant_tracks"] = playlist.tracks.total
+    return datos_playlist
+
+
+def datos_playlists_SP(spotify: tk.Spotify, id_usuario: str) -> list:
+    """
+    Pre: Recibe un objeto spotify (ya con los datos de nuestro perfil elegido) y el id de Spotify del perfil actual.
+    Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
+    """
+    datos: list = []
+    datos_playlists: list = perf.probando(spotify.playlists, [id_usuario, 50])
+    if datos_playlists and datos_playlists[0].items:  # Si hay playlists
+        for playlist in datos_playlists[0].items:
+            datos_playlist: dict = ordenar_datos_playlist_SP(playlist)
+            datos.append(datos_playlist)
+    elif not datos_playlists:
+        datos.append("SIN INTERNET")
+    return datos
 
 ### ----------------------- AUXILIARES EN SINCRONIZACIÓN ------------------------------------------
 ###################################################################################################
 
 #### Controlar que canciones ya están en la lista para no repetirlas >>>>>>>>>>>>>>>>>>>
+
 def lista_canciones(info_playlist: dict, lista_cancion: list, servidor: str) -> None:
-    artistas:list = []
+    # Lista las canciones para poder comparar si hay alguna, para que no se repitan
     if servidor == "spotify":
         for i in range(len(info_playlist['tracks'])):
+            # los artistas pueden ser varios por lo que se genera una lista
             artistas: list = []
             cancion: str = info_playlist['tracks'][i]['name']
             for j in range(len(info_playlist['tracks'][i]['artists'])):
                 artistas.append(info_playlist['tracks'][i]['artists'][j]['name'])
+            # por cada track se agrega en nombre de la canción y los artistas
             lista_cancion.append([cancion, ','.join(artistas)])
     if servidor == "youtube":
+        # la misma función pero para youtubr
         for i in range(len(info_playlist['tracks'])):
 
             cancion: str = info_playlist['tracks'][i]['name']
             artistas = (info_playlist['tracks'][i]['artists'])
             cancioncita: str = ""
             artistis: str = ""
+            # se intenta limpiar el nombre para poder encontrarlo en spotify
             cancioncita, artistis = limpieza(cancion, artistas)
             lista_cancion.append([cancioncita, artistis])
 
 
-def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str)->list:
-        # comparar ambas listas para no agregar repetidos
+def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str) -> list:
+    # comparar ambas listas para no agregar repetidos
     lista_a_agregar: list = []
     if servicio_base == "spotify":
+        # si es desde spotify a youtube se realiza la comparación agregando aquelloras de spotify que no
+        # encuentren par con la lista en youtube
         for i in range(len(lista_spotifai)):
             esta: bool = False
             for j in range(len(lista_yutub)):
@@ -72,6 +151,7 @@ def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str)->li
             if esta == False:
                 lista_a_agregar.append(lista_spotifai[i])
     if servicio_base == "youtube":
+        # lo mismo pero para youtube
         for i in range(len(lista_yutub)):
             esta: bool = False
             for j in range(len(lista_spotifai)):
@@ -84,22 +164,24 @@ def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str)->li
 
 
 #### Parseo de titulos de canciones >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def limpieza_yutub(search: dict)->list:
+def limpieza_yutub(search: dict) -> list:
+    # cuando hay un search debo ordenar la información
     lista_encontrados: list = []
     for i in search['items']:
+        # se recorre
+        # titulo real del video
         titulo: str = i['snippet']['title']
         id: str = i['id']['videoId']
-        # titulo real
-        # forma del kpop
-
         cancion: str = ""
         cantante:  str = ""
         cancion,cantante = limpieza(titulo, search['items'][0]['channelTitle'])
         lista_encontrados.append([id, cancion, cantante])
-        return lista_encontrados
+    return lista_encontrados
 
 
-def limpieza(titulo: str, canal: str)->tuple:
+def limpieza(titulo: str, canal: str) -> tuple:
+    # se intenta corregir los nombres que provienen de youtube ya que estos no son compatibles con spotify
+    # cuando salen comillas normalmente es el nombre de la canción
     if "&#39;" in titulo:
         star: int = titulo.find('&')
         comienzo: int = titulo.find(';')
@@ -109,6 +191,7 @@ def limpieza(titulo: str, canal: str)->tuple:
         cancion = cancion[0:fin]
 
     # forma del pop
+    # normalmente tienen esta separación
     elif "-" in titulo:
         comienzo: int = titulo.find('-')
         cantante: str = titulo[0:comienzo - 1]
@@ -122,6 +205,7 @@ def limpieza(titulo: str, canal: str)->tuple:
     else:
         cancion: str = titulo
         cantante: str = canal
+    # los apostrofes en canciones en ingles
     while '&#39;' in cancion:
         principito: int = cancion.find('&')
         final: int = cancion.find(';')
@@ -132,7 +216,7 @@ def limpieza(titulo: str, canal: str)->tuple:
 
 
 def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: object, user_id_spotifai: str,
-                       user_id_yutub: str):
+                       user_id_yutub: str) -> None:
     opcion: str = input("Indicar si es de spotify a youtube (1) o"
                         " de youtube a spotify (2)\n >>>")
     # donde se va a guardar la informacion de la lista de spotify
@@ -141,9 +225,9 @@ def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: objec
     # aca se va a guardar la informacion de la lista de youtube
     playlist_yutub: dict = {}
     detalles_yutub: dict = {}
-    
+
     while opcion != "1" and opcion != "2":
-        opcion = input("Solo hay dos opciones")
+        opcion = input("Solo hay dos opciones: ")
     opcion: int = int(opcion)
 
     if opcion == 1:
@@ -154,18 +238,19 @@ def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: objec
         no_se_pudo: dict = sincronizacion_youtube_a_spotify(usuario_actual, playlist_spotifai, detalles_spotifai,
                                        token_yutub, user_id_spotifai,  playlist_yutub,
                                          detalles_yutub, spotify)
-
-
+    # si hay algo en el dict de no se pudo se exporta a csv sino un cartel
     if len(no_se_pudo['no se pudo']) != 0:
-        exportar_dict_a_cvs("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
+        exportar_dict_a_csv("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
     else:
         print("HABEMUS UN GANADOR, USTED PASO TODAS SUS CANCIONES CORRECTAMENTE")
 
 
-def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombre: str, servicio: str)->str:
+def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombre: str, servicio: str) -> str:
+    # cuando se crea playlist y no se sabe el id de la cancion
+
     playlist_id: str =""
-    
     if servicio=="spotify":
+        # se busca en las playlist cual tiene el mismo nombre y se da el id
         playlist = spotify.playlists(user_id, limit=50)
         for i in range(len(playlist.items)):
             if playlist.items[i].name == nombre:
@@ -184,14 +269,12 @@ def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombr
                 playlist_id = i['id']
     return playlist_id
 
-
 ### ----------------------- SINCRONIZACIÓN SPOTIFY A YOUTUBE --------------------------------------
 ###################################################################################################
 
-
 def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
-
                                    lista_no_encontrados: list) -> str:
+    # se ve si se encontro algo o no y se da el id.
     id_elegido: str = ""
     if len(search) != 0:
         for i in search['items']:
@@ -199,7 +282,6 @@ def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
     else:
         id_elegido = "no habemus nada"
         lista_no_encontrados.append([nombre, artista])
-
     return id_elegido
 
 
@@ -208,62 +290,61 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
                                      detalles_yutub: dict, spotify: object) -> dict:
     # DE SPOTIFAI AL YUTUB
     lista_spotifai: list = []
-    print_playlists_de_user(usuario_actual, "spotify")
-    seleccionar_playlist(usuario_actual, playlist_spotifai, "spotify")
-    print(playlist_spotifai)
+    print_playlists_de_user(usuario_actual, "spotify")  # poner un if not usuario_actual["spotify"]["playlists_spotify"]
+    seleccionar_playlist(usuario_actual, playlist_spotifai, "spotify") # Para que no llegue aqui si no hay ninguna playlist
     # recibo la informacion de la lista elegida
     importar_playlist(spotify, token_yutub, playlist_spotifai['id'],
                       playlist_spotifai['name'],
                       "spotify", detalles_spotifai)
     lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
     # ahora tengo que saber si quiere crear una nueva o no
-
     opcion2: str = input("Quiere: \n [1] crear nueva playlist \n [2] realizarlo en una ya creada ")
     while opcion2 != "1" and opcion2 != "2":
-        opcion2 = input("solo hay dos opciones.")
+        opcion2 = input("Solo hay dos opciones: ")
     opcion2: int = int(opcion2)
     if opcion2 == 1:
         # crear lista de youtube
-        nombre = crear_playlist_youtube(token_yutub)
-        playlist_id: str = ""
-        playlist_id = dame_id_playlist(spotify, token_yutub, user_id_yutub, nombre, "youtube")
+        nombre, playlist_id = crear_playlist_youtube(token_yutub)
+        #playlist_id: str = ""
+        # se obtiene el id
+        #playlist_id = dame_id_playlist(spotify, token_yutub, user_id_yutub, nombre, "youtube")
+        # la lista de canciones es nula
         lista_yutub: list = []
     else:
         # uso una ya conocida
         lista_yutub: list = []
         print_playlists_de_user(usuario_actual, "youtube")
-
         seleccionar_playlist(usuario_actual, playlist_yutub, "youtube", True)
         # recibo la informacion de la lista elegida
         importar_playlist(spotify, token_yutub, playlist_yutub['id'], playlist_yutub['name'],
                           "youtube", detalles_yutub)
         playlist_id: str = detalles_yutub['id']
+        # la lista de canciones se desconoce (en forma de lista) por lo que llamo a la función
         lista_canciones(detalles_yutub, lista_yutub, "youtube")
+    # comparo cuales debo agregar y cuales no
     lista_agregar = comparacion(lista_yutub, lista_spotifai, "spotify")
-    print(lista_agregar)
+    # es la lista de aquellos que no se puede
     lista_no_agregado: list = []
-
     for i in range(len(lista_agregar)):
         search = buscar_item(spotify, token_yutub, "youtube",
                              f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
         id: str = comparacion_con_search_youtube(search, lista_agregar[i][0], lista_agregar[i][1],
                                                  lista_no_agregado)
-
-        print(id)
+        # se busca y se obtiene el id, si no hay ningun id el comparacion con search entrega un id con las palabras no habemus nada
         if id != "no habemus nada":
+            # se agrega canción por canción
             agregar_cancion_a_youtube(playlist_id, id, token_yutub)
     no_se_pudo: dict = {}
     no_se_pudo['no se pudo'] = lista_no_agregado
     return no_se_pudo
-
 
 ### ----------------------- SINCRONIZACIÓN YOUTUBE A SPOTIFY --------------------------------------
 ###################################################################################################
 
 def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uris: list,
                                    lista_no_encontrados: list) -> None:
-    # limpio el search con los cinco primeros.
-
+    # limpio el search y si no se encontro se suma a los no encontrados.
+    # es más posible que esto suceda ya que puede haber cosas en las listas de youtube que no es música
     if len(search) !=0 :
         for x in search:
             for item in x.items:
@@ -274,8 +355,7 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
 
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
                                      token_yutub: object, user_id_spotifai: str, playlist_yutub: dict,
-                                     detalles_yutub: dict, spotify: object,
-                                     playlist_emerg:dict={}, emergencia:bool= False) -> dict:
+                                     detalles_yutub: dict, spotify: object, emergencia:bool= False) -> dict:
     # A ESTE PUNTO LA PROGRAMADORA SE ESTA PREGUNTANDO SI ES BUENA IDEA SEGUIR VIVIENDO
     playlist_id: str = ""
     lista_yutub: list = []
@@ -287,18 +367,19 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     # recibo la informacion de la lista elegida
     importar_playlist(spotify, token_yutub, playlist_yutub['id'], playlist_yutub['name'],
                       "youtube", detalles_yutub)
+    # busco las canciones en la lista que eleji de youtube
     lista_canciones(detalles_yutub, lista_yutub, "youtube")
-
     opcion2: str = input("Quiere: \n [1] crear nueva playlist \n [2] realizarlo en una ya creada ")
     while opcion2 != "1" and opcion2 != "2":
-        opcion2 = input("solo hay dos opciones.")
+        opcion2 = input("Solo hay dos opciones: ")
     opcion2: int = int(opcion2)
     if opcion2 == 1:
         # creo la playlist de spotify
+        # la lista de canciones es nula
         lista_spotifai: list = []
-        nombre: str = crear_playlist_spotify(user_id_spotifai, spotify)
+        nombre, playlist_id = crear_playlist_spotify(usuario_actual)
         # como recibo la informacion de la playlist que elegí, necesito id
-        playlist_id = dame_id_playlist(spotify, token_yutub, user_id_spotifai, nombre, 'spotify')
+        # playlist_id = dame_id_playlist(spotify, token_yutub, user_id_spotifai, nombre, 'spotify')
     elif opcion2 == 2:
         # uso una de las de ahí
         lista_spotifai: list = []
@@ -307,71 +388,91 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
         # recibo la informacion de la lista elegida
         importar_playlist(spotify, token_yutub,playlist_spotifai['id'], playlist_spotifai['name'],
                           "spotify", detalles_spotifai)
+        # busco las canciones que están en spotify
         lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
         playlist_id = detalles_spotifai['id']
+    #comparo ambas listas
     lista_agregar: list = comparacion(lista_yutub, lista_spotifai, "youtube")
-    print(lista_agregar)
     uris: list = []
     lista_no_agregado: list = []
-
     # lista_encontrados: list = []
     # uris de las canciones
     for i in range(len(lista_agregar)):
         search = buscar_item(spotify, token_yutub, "spotify",
                              f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
 
-
+        # acá voy agregando las uris de lo que encuentro
         comparacion_con_search_spotify(search, lista_agregar[i][0], lista_agregar[i][1], uris,
                                        lista_no_agregado)
-        # se agrega las canciones encontradas
+
     try:
+        # esto es por si no hay uris, puede ser que no se encuentre nada
         agregar_cancion_a_spotify(playlist_id, uris, spotify)
     except tk.BadRequest:
         print("Upsi! Ninguna canción de las que estaban en su lista fueron encontradas en Spotify")
 
-    no_se_pudo: dict = {}
-    no_se_pudo['no se pudo'] = lista_no_agregado
-
-    return no_se_pudo
+    if not emergencia:
+        no_se_pudo: dict = {}
+        no_se_pudo['no se pudo'] = lista_no_agregado
+        return no_se_pudo
+    else:
+        playlist_emerg: dict = {}
+        if opcion2 == 2:
+            playlist_emerg = {
+                'id': playlist_id,
+                'servidor': 'spotify',
+                'name': detalles_spotifai['name']
+            }
+        else:
+            playlist_emerg = {
+                'id': playlist_id,
+                'servidor': 'spotify',
+                'name': nombre
+            }
+        return playlist_emerg
 
 ### ----------------------- WORDCLOUD -------------------------------------------------------------
 ###################################################################################################
 
+def wordcloud(usuario_actual: dict, spotify: object, youtube: object) -> None:
+    servidor, datos_playlists = playlist_segun_servidor(usuario_actual, False)
+    if datos_playlists:
+        # acá se guarda la información de la playlist que elijo
+        indice_playlist_elegida: int = seleccionar_playlist(usuario_actual, datos_playlists, servidor)
 
-def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> None:
-    print("Hola en esta seccion tenemos imagenes de palabras marque: \n"
-          "[1] si desea hacerlo con una playlist de spotify \n"
-          "[2]  de lo contrario ")
-    opcion: str = input(">>>> ")
-    detalles: dict = {}
-    mi_playlist: dict = {}
-    while opcion != "1" and opcion != "2":
-        opcion = input(" suspiro..... Vamos de nuevo (1) o (2)")
-    opcion: int = int(opcion)
-    if opcion == 1:
-        print_playlists_de_user(usuario_actual, "spotify")
-        seleccionar_playlist(usuario_actual, mi_playlist, "spotify")
-        importar_playlist(spotify, token_youtube, mi_playlist['id'], mi_playlist['name'], "spotify", detalles)
-        servidor: str = "spotify"
-    elif opcion == 2:
-        print_playlists_de_user(usuario_actual, "youtube")
-        seleccionar_playlist(usuario_actual, mi_playlist, "youtube")
-        print("Puede ser que este resultado sea bastate malo, le recomiendo pasar la lista a spotify para un"
-              "mejor rendimiento :)")
-        importar_playlist(spotify, token_youtube, mi_playlist['id'], mi_playlist['name'], "youtube", detalles)
-        servidor: str = "youtube"
-    letra_total: str = ""
-    print("Esto va a tomar un tiempo, por favor imagine musica de ascensor\n"
-          "tu tuutututut tuut utututu")
-    letra_total = rejunte_letras(detalles, servidor)
-    try:
-        al_wordcloud(letra_total, usuario_actual['username'], mi_playlist['id'])
-        mostrame_esta(usuario_actual['username'], mi_playlist['id'])
-    except TimeoutError:
-        print("Ouh no! Hubo un error y se supero el tiempo de espera, sepa disculpar")
+        if servidor == "youtube": 
+            print("Puede ser que este resultado sea bastate malo, le recomiendo pasar la lista a spotify para un"
+                  "mejor rendimiento :)")
+
+        playlist_elegida: dict = datos_playlists[indice_playlist_elegida]
+
+        if playlist_elegida["cant_tracks"] == 0:
+            print("La playlist elegida esta vacia, no pudimos ni realizar el analisis.")
+            input("Presione Enter para volver al menu principal: ")
+        else:
+            if servidor == "spotify":
+                tracks_playlist: list = tracks_playlist_spotify(spotify, playlist_elegida["id"])
+            else:
+                tracks_playlist: list = tracks_playlist_youtube(youtube, playlist_elegida["id"])
+            letra_total: str = ""
+            # realmente toma mucho tiempo si es larga la playlist
+            print("Esto va a tomar un tiempo, por favor imagine musica de ascensor\n"
+                "tu tuutututut tuut utututu")
+            letra_total = rejunte_letras(tracks_playlist, playlist_elegida, servidor)
+            try:
+                al_wordcloud(letra_total, usuario_actual['username'], playlist_elegida['id'])
+                mostrame_esta_imagen(usuario_actual['username'], playlist_elegida['id'])
+            except TimeoutError:
+                # esto se arreglará para la reentrega
+                print("Ouh no! Hubo un error y se supero el tiempo de espera, sepa disculpar")
+    else:
+        print(" Sin playlists no podemos crear la nube de palabras.")
+        input("Presione Enter volver al menu principal: ")
 
 
-def al_wordcloud(letra_total: str, usuario:str, id_playlist:str) -> None:
+def al_wordcloud(letra_total: str, usuario: str, id_playlist: str) -> None:
+    # para que el request de algun valor como las letras de la canción es muy larga se debió hacer un json con todo el rejunte
+    # el problema acá es que json no le cae muy bien el español u otros idiomas que no sean el ingles
     jsonito = json.dumps(letra_total)
     resp = requests.post('https://quickchart.io/wordcloud', json={
         "format": "png",
@@ -390,718 +491,41 @@ def al_wordcloud(letra_total: str, usuario:str, id_playlist:str) -> None:
         f.write(resp.content)
 
 
-def mostrame_esta(usuario: str, id_playlist: str) -> None:
+def mostrame_esta_imagen(usuario: str, id_playlist: str) -> None:
+    # simplemente plotea la imagen
     img = cv.imread(f'wordcloud_{usuario}_{id_playlist}.png')
-    cv.imwrite('modified_img.jpg', img, [int(cv.IMWRITE_JPEG_QUALITY), 100])
+    cv.imwrite(f'wordcloud_{usuario}_{id_playlist}.jpg', img, [int(cv.IMWRITE_JPEG_QUALITY), 100])
     plt.imshow(img)
     plt.show()
-
 
 ### ----------------------- CREAR PLAYLISTS -------------------------------------------------------
 ###################################################################################################
 
-def crear_playlist_spotify(user_id: str, spotify: object) -> str:
-    nombre: str = input("indique el nombre para la playlist en spotify")
-    publica: str = input("indique si desea que sea publica (s/n)")
-    if publica in "sS":
-        public: bool = True
-    else:
-        public: bool = False
-    descripcion: str = input("indique descripción: ")
-    spotify.playlist_create(user_id, nombre, public, descripcion)
-    return nombre
-
-
-def crear_playlist_youtube(token_yutub: object) -> str:
-    youtube = token_yutub
-    nombre: str = input("Indicame el nombre bebe: ")
-    descripcion: str = input("La descripcion please")
-    privaciti: str = input("Privado (p) o no privado (n) esa es la cuestion")
-    i: int = 0
-    while privaciti != "p" and privaciti != "n":
-        i = i + 1
-        if i == 2:
-            print("Mire que no tenemos todo el dia")
-        privaciti = input("Por favor escriba correctamente")
-    if privaciti in "pP":
-        privaciti = 'private'
-    else:
-        privaciti = 'public'
-    playlists_insert_response = youtube.playlists().insert(
-        part="snippet,status",
-        body=dict(
-            snippet=dict(
-                title=nombre,
-                description=descripcion
-            ),
-            status=dict(
-                privacyStatus=privaciti
-            )
-        )
-    ).execute()
-    return nombre
-
-def crear_playlist(user_id: str, spotify: object, token_youtube: object)->None:
-    print("Usted decidio crear playlist, elija el servidor \n"
-          "(1) Spotify\n"
-          "(2) Youtube")
-    opcion: str = input(">>> ")
-    while opcion!="1" and opcion!="2":
-        opcion = input("Solo le estoy pidiendo que ingrese numeros no me haga enojar")
-    opcion: int = int(opcion)
-    if opcion == 1:
-        crear_playlist_spotify(user_id, spotify)
-    else:
-        crear_playlist_youtube(token_youtube)
-
-
-### ----------------------------- ANALISIS DE PLAYLISTS -------------------------------------------
-###################################################################################################
-
-### Funciones reutilizables >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
-#Recibe los datos de usuario y un servidor elegido
-#Con auxiliar visual_lista_elementos muestra los nombres de las playlist del servidor dado
-    lista_nombres: list = list()
-    for playlist in usuario_actual[f'playlists_{servidor}']:
-        lista_nombres.append(playlist['name'])
-    vis.visual_lista_elementos(lista_nombres, f"Playlists de {servidor}", True)
-
-def playlist_segun_servidor(usuario_actual: dict) -> str:
-#recibe los datos de usuario 
-#determina que servidor usar para mostrar las playlist y llama a auxiliares correspondientes 
-#(print_playlists_de_user)
-    print("Desea listar: \n"
-          "[1] Playlist de Spotify\n"
-          "[2] Playlist de Youtube\n"
-          "[3] Mostrar ambas")
-    seleccion = input_num_con_control(1,3)
-
-    if seleccion == 1:
-        print_playlists_de_user(usuario_actual, "spotify")
-        servidor: str = "spotify"
-    elif seleccion == 2:
-        print_playlists_de_user(usuario_actual, "youtube")
-        servidor: str = "youtube"
-    else:
-        print_playlists_de_user(usuario_actual, "spotify")
-        print_playlists_de_user(usuario_actual, "youtube")
-        servidor: str = "unknown"
-    return servidor
-
-
-def comprobar_permisos(usuario_actual:dict, servidor:str, seleccion:int) -> bool:
-#recibe los datos de usuario y un numero de seleccion (= index de playlist + 1 )
-#recibe servidor por si se necesitan agregar otros servidores a futuro
-#Comprueba que sea colaborativa o del usuario actual para poder modificarla 
-#Devuelve true de serlo
-
-    permitido: bool = False
-    if servidor == "spotify":
-        id : str= usuario_actual["playlists_spotify"][seleccion - 1]['id']
-        if usuario_actual["playlists_spotify"][seleccion - 1]['collaborative']:
-            permitido = True
-        else:
-            spotify = usuario_actual['spotify']
-            owner_playlist = spotify.playlist(id).owner
-            if owner_playlist.id == usuario_actual['id_usuario_spotify']:
-                permitido = True
-    return permitido
-
-
-def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, permisos:bool = False) -> None:
-#Recibe datos de usuario, mi_playlist como dict vacio, servidor y de necesitar realizarse cambios, permisos = True
-#mi_playlist se llena con los datos de la playlist seleccionada (servidor, nombre y id)
-
-    permitido : bool = False
-    print("Seleccione una playlist ")
-    seleccion = input("    >>> ")
-    while not seleccion.isnumeric() or int(seleccion)<1:
-        seleccion = input("Inválido. Vuelva a ingresar >>> ")
-    seleccion = int(seleccion)
-
-    if servidor == "spotify" and seleccion>len(usuario_actual['playlists_spotify']):
-        print("Número de playlist ingresado inválido.")
-    elif servidor == "youtube" and seleccion>len(usuario_actual['playlists_youtube']):
-        print("Número de playlist ingresado inválido.")
-    else:
-        permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-        while servidor == "spotify" and permisos and not permitido:
-            print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
-            seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
-            permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-
-        mi_playlist['servidor'] = servidor
-        mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
-        mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id']
-
-
-def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
-                                playlist_id:str, playlist_nombre:str) -> None:
-
-    detalles['id'] = playlist_id
-    detalles['name'] = playlist_nombre
-    detalles['tracks']= []
-    detalles['owner'] = {
-        'display_name': info_playlist[0]['owner']['display_name'],
-        'id': info_playlist[0]['owner']['id'],
-        'uri': info_playlist[0]['owner']['uri']
-    }
-
-    for i in info_playlist[0]['tracks']['items']:
-        detalles['tracks'].append(
-                {
-                    'artists':  i['track']['artists'],
-                    'id': i['track']['id'],
-                    'name': i['track']['name'],
-                    'track_number': i['track']['track_number'],
-                    'uri': i['track']['uri']
-                }
-        )
-
-
-def normalizar_playlist_youtube(info_playlist:list, detalles:dict, playlist_id:str, playlist_nombre:str) -> None:
-    detalles['id'] = playlist_id
-    detalles['name'] = playlist_nombre
-    detalles['tracks'] = []
-    detalles['owner'] = {
-        'display_name': info_playlist[0]['snippet']['channelTitle'],
-        'id': "unknown",
-        'uri': "unknown"
-    }
-
-    for i in info_playlist:
-        detalles['tracks'].append(
-                {'artists': i['snippet']['videoOwnerChannelTitle'],
-                 'id': i['id'],
-                 'name': i['snippet']['title'],
-                 'track_number': i['snippet']['position'],
-                 'uri': 'unknown'
-                 }
-        )
-
-
-def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, playlist_nombre:str,
-                      servidor:str, detalles_playlist:dict) -> None:
-
-    info_playlist:list=list()
-    if servidor == "spotify":
-        info_playlist.append(Spotify.playlist(spotify, playlist_id, fields=None, market=None, as_tracks=True))
-
-        normalizar_playlist_spotify(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
-    elif servidor == "youtube":
-        # !!! to-do!!!
-        # ver cuando una playlist tiene +50 elementos
-        youtube = token_youtube
-        request = youtube.playlistItems().list(
-            part="id, snippet, contentDetails",
-            maxResults=50,
-            playlistId=playlist_id
-        )
-        response = request.execute()
-        for item in response['items']: #lista de dicts
-            info_playlist.append(item)
-
-        normalizar_playlist_youtube(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
-
-
-def exportar_dict_a_cvs(extension:str, usuario:str, mi_dict:dict, nombre:str) -> None:
-    # Funciona para un solo dict, no nested dicts, y reescribe el archivo
-    with open(f"{nombre}_{usuario}.{extension}", "w") as archivito:
-        w = csv.DictWriter(archivito, mi_dict.keys())
-        w.writeheader()
-        w.writerow(mi_dict)
-
-
-### Funciones propias del analisis de atributos >>>>>>>>>>>>>>>>>>>>>>>>
-
-def analizar_track(track:dict, atributos_track:dict, spotify:object, atributos:list, servidor:str='spotify') -> None:
-    if servidor == "spotify":
-        # !!! to-do !!!
-        # Ver si es necesario controlar esto:
-        # if not track.episode and not track.is_local:
-        print(f"Analizando track {track['name']}...\n")
-        analisis = spotify.track_audio_features(track['id'])
-
-        for atrib in atributos:
-            atributos_track[atrib] = getattr(analisis, atrib)
-
-
-def analisis_de_playlist(usuario_actual:dict) -> None:
-    fecha = date.today()
-    mi_playlist:dict=dict()
-    atributos_playlist:dict={}
-    atributos_track: dict = {}
-    detalles_playlist: dict=dict()
-    # atributos_playlist:dict:
-    #     {
-    #     fecha de analisis : object??
-    #     id : str
-    #     name: str
-    #     atributo: int,
-    #     atributo2: int,
-    #     ...
-    # }
-    atributos: list = [
-        'acousticness', 'danceability', 'energy', 'liveness', 'loudness',
-        'valence', 'tempo', 'duration_ms', 'instrumentalness', 'speechiness'
-    ]
-    servidor:str = playlist_segun_servidor(usuario_actual)
-    if servidor == "unknown":
-        servidor = seleccion_servidor()
-
-    seleccionar_playlist(usuario_actual, mi_playlist, servidor)
-
-    if mi_playlist['servidor'] == "spotify":
-        importar_playlist(usuario_actual['spotify'], usuario_actual['youtube'], mi_playlist['id'],
-                          mi_playlist['name'], mi_playlist['servidor'], detalles_playlist)
-        for track in detalles_playlist['tracks']:
-            try:
-                analizar_track(track, atributos_track, usuario_actual['spotify'], atributos)
-                for key,value in atributos_track.items():
-                    if atributos_playlist == {} and key not in atributos_playlist.keys():
-                        atributos_playlist['fecha de analisis'] = fecha
-                        atributos_playlist['id'] = detalles_playlist['id']
-                        atributos_playlist['playlist name'] = detalles_playlist['name']
-                        atributos_playlist[key] = value
-                    elif key not in atributos_playlist.keys():
-                        atributos_playlist[key] = value
-                    else:
-                        atributos_playlist[key] += value
-                exportar_dict_a_cvs('cvs', usuario_actual['username'], atributos_playlist,
-                                    f"atributos_playlist_{mi_playlist['id']}")
-            except TimeoutError:
-                print(vis.NO_INTERNET)
-
-        if os.path.isfile(f'atributos_playlist_{mi_playlist["id"]}_{usuario_actual["username"]}.cvs'):
-            print(f"Se ha creado un archivo con los atributos de la playlist {atributos_playlist['playlist name']} \n"
-                  f"en el directorio {os.getcwd()}")
-        else:
-            print("Ha habido un error al generar el archivo. Intentelo nuevamente.")
-
-    else:
-        print("No podemos realizar un analisis de atributos musicales para"
-              " playlists en youtube.") #Youtube Music API when ??
-        print("Podemos sincronizar con spotify y realizar el analisis de las canciones que estén en esa plataforma.")
-        sincronizar:str = input("[S] aceptar \nCualquier [Tecla] volver\n     >>>   ").lower()
-        if sincronizar == "s":
-            sincronizacion_de_emergencia(usuario_actual, mi_playlist)
-
-
-def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
-    temp_spotify: dict = dict()
-    detalles_spotify: dict = dict()
-    detalles_youtube: dict = dict()
-    sincronizacion_youtube_a_spotify(usuario_actual, temp_spotify, detalles_spotify,
-                                     usuario_actual['youtube'], usuario_actual['id_usuario_youtube'],
-                                     mi_playlist, detalles_youtube, usuario_actual['spotify'])
-
-
-### ------------------------ BÚSQUEDA DE CANCIONES ------------------------------------------------
-###################################################################################################
-
-def seleccion_servidor() -> str:
-    servidor = input("Ingrese el servidor en el que desea buscar: ").lower()
-    while not servidor == "spotify" and not servidor == "youtube":
-        servidor = input("Servidor inválido, vuelva a ingresar >>> ").lower()
-    return servidor
-
-def buscar_cancion(spotify: object, token_youtube: object, resultados: list, servidor:str) -> None:
-    datos_parseados : list = list()
-    # Recibe resultados como list vacia para poder devolver las canciones de la búsqueda.
-    # resultados:list = [
-    #     {
-    #         id: str,
-    #         name: str,
-    #         artista: list,
-    #         album: str
-    #     },
-    #     ...
-    # ]
-
-    cancion = input("Ingrese el nombre de la canción a buscar >>> ")
-    artista = input("Ingrese el artista >>> ")
-    search = buscar_item(spotify, token_youtube, servidor, f"{cancion} {artista}", 3, ('track', ))
-    # search = buscar_item(spotify, token_youtube, servidor, f"{cancion}, {artista}", 3, ('track', 'artist'))
-
-    if servidor == "spotify":
-        print("Buscando en spotify...")
-        for x in search:  # tupla #object
-            for item in x.items:
-                item_n: dict = dict()
-                item_n['id'] = item.id
-                item_n['name'] = item.name
-                item_n['uri'] = item.uri
-                try:
-                    item_n['artists'] = []
-                    for artist in item.album.artists:  # artists es lista en model
-                        item_n['artists'].append(artist.name)
-                except AttributeError:
-                    item_n['album'] = "Desconocido"
-                try:
-                    item_n['album'] = item.album.name
-                except AttributeError:
-                    item_n['artists'] = "Desconocido"
-                resultados.append(item_n)
-    elif servidor == "youtube":
-        print("Buscando en youtube...")
-        for x in search['items']:  # dict
-            item_n: dict = dict()
-            item_n['id'] = x['id']['videoId']
-            item_n['name'] = x['snippet']['title']
-            item_n['artists'] = [x['snippet']['channelTitle']]
-            item_n['album'] = "Descono1cido"
-            resultados.append(item_n)
-
-
-
-def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, limit:int, types:tuple=('track',))-> tuple:
-    if servidor == "spotify":
-        # cambiando el tipo podemos buscar playlists, albums, artistas, etc
-        try:
-            search = spotify.search(query, types=types, market=None, include_external=None, limit=limit, offset=0)
-        except tk.NotFound:
-            search:tuple = ()
-    elif servidor == "youtube":
-        youtube = token_youtube
-        search = youtube.search().list(
-            part="id, snippet",
-            maxResults=limit,
-            order="relevance",
-            q=query
-        )
-        search = search.execute()
-
-    return search
-
-
-### ------------------------ ACCIONES POSTERIORES A BÚSQUEDA --------------------------------------
-###################################################################################################
-
-def agregar_cancion_a_youtube(playlist_id: str, cancion_id: str, youtube: object) -> None:
-    request = youtube.playlistItems().insert(
-        part="snippet",
-        body={
-            "snippet": {
-                "playlistId": playlist_id,
-                "resourceId": {
-                    "kind": "youtube#video",
-                    "videoId": cancion_id
-                }
-            }
-        }
-    )
-    response = request.execute()
-    print(response)
-
-
-def agregar_a_playlist(usuario_actual:dict, cancion:dict, servidor:str) -> None:
-    mi_playlist: dict = dict()
-
-    seleccionar_playlist(usuario_actual, mi_playlist, servidor, True)
-
-    if mi_playlist['servidor'] == 'spotify':
-        agregar_cancion_a_spotify(mi_playlist['id'], [cancion['uri']], usuario_actual['spotify'])
-    elif mi_playlist['servidor'] == 'youtube':
-        agregar_cancion_a_youtube(mi_playlist['id'], cancion['id'], usuario_actual['youtube'])
-
-
-def agregar_cancion_a_spotify(playlist_id:str, uri_cancion:list, spotify:object) -> None:
-    try:
-        spotify.playlist_add(playlist_id, uri_cancion)
-        print("Canción agregada correctamente")
-    except TimeoutError:
-        print(vis.NO_INTERNET)
-
-
-
-def info_html_de_youtube(cancion:dict) -> None:
-    track: str =""
-    artista: str = ""
-    try:
-        url = f"https://www.youtube.com/watch?v={cancion['id']}"
-        ydl = youtube_dl.YoutubeDL({})
-        with ydl:
-            video = ydl.extract_info(url, download=False)
-            if video != {}:
-                track = video['track']
-                artista = video['artist']
-            else:
-                print("No pudimos extraer información del track por este medio.")
-    except KeyError:
-        print("Error en el sistema. No se pudo extraer por este medio.")
-
-    return track, artista
-
-
-def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
-    nombre = cancion['name']
-    artistas: str = ','.join(cancion['artists'])
-
-    vis.mostrar_cancion(cancion, seleccion)
-    token_genius: str = ingreso_genius()
-    letra: str = extraer_letra(token_genius, nombre, artistas)
-    if letra == "":
-        print("No se ha encontrado ninguna letra para esta canción.")
-        print("\n- [x] Si quiere buscar la letra por otros medios"
-              "\n- Cualquier [Tecla] para finalizar")
-    else:
-        print(letra)
-        print("\n- [x] Si la letra mostrada es incorrecta y quiere "
-                        "volver a buscarla\n- Cualquier [Tecla] para finalizar")
-
-    es_la_letra = input("     >>>   ")
-    if es_la_letra in "xX":
-        if servidor == "youtube":
-            print("[1] Ingresar nombre manualmente \n"
-                  "[2] Extraer información con la libreria youtube_dl")
-            opcion:int=input_num_con_control(1,2)
-            if opcion == 1:
-                letra = extraer_letra(token_genius)
-            else:
-                nombre, artistas = info_html_de_youtube(cancion)
-                if nombre != "" and artistas!= "":
-                    print(f"Encontramos que la canción es {nombre}\n por {artistas}")
-                    letra = extraer_letra(token_genius, nombre, artistas)
-        else:
-            print("Puede probar ingresando el nombre manualmente. ")
-            letra = extraer_letra(token_genius)
-
-        if letra == "":
-            print("No pudimos encontrar la letra que buscaba. ")
-        else:
-            print(letra)
-
-        input("Presione una tecla para volver al menu >>> ")
-
-
-def administracion_de_canciones(usuario_actual:dict) -> None:
-    resultados: list = list()
-    titulo: str = "Administrar canción"
-    opciones: list = [
-        "Visualizar", "Agregar a playlist"
-    ]
-
-    servidor = seleccion_servidor()
-    buscar_cancion(usuario_actual['spotify'], usuario_actual['youtube'], resultados, servidor)
-    if len(resultados) > 0:
-        print(f"""\n     Resultados de búsqueda""")
-        for i in range(len(resultados)):
-            if servidor == "spotify":
-                vis.mostrar_cancion(resultados[i], i+1)
-            elif servidor == "youtube":
-                vis.mostrar_nombre_vid(resultados[i], i+1)
-
-        print("Ingrese el codigo de la canción que buscaba")
-        seleccion_cancion = input_num_con_control(1,3)
-
-        vis.menu_con_opciones_cortas(titulo, opciones)
-        accion = input_num_con_control(1,(len(resultados)+1))
-
-        if accion == 1:
-            visualizar_cancion(resultados[seleccion_cancion-1], seleccion_cancion, servidor)
-        else:
-            print("Vamos a elegir una playlist de la lista")
-            print_playlists_de_user(usuario_actual, servidor)
-            agregar_a_playlist(usuario_actual, resultados[seleccion_cancion-1], servidor)
-    else:
-        print("No hemos obtenido ningún resultado de la búsqueda")
-
-
-###------------------------- MANEJO DE LYRICS ------------------------------------------------------
-####################################################################################################
-def ingreso_genius()->str:
-    client_id: str = "LkrBCrYXlZO4Wm7Hx1X-AU0g9z_bNYc2ehowpFLNhgcVa-MdX8J1zceedRf59FNN"
-    client_secret: str = "nRzbwpwEiEcic8uN9qyXRKAwo8O2e48lstan5rtc8F8FKIw6QbY1DUGV8P_FTzom763BRHuJWKcowt7jm9U8mQ"
-    token_genius: str = "OomA5Dwkt15uqiCNHKthDcDx7gqYbFAkXeQFoX_DHqu-C6NQzyuBoxOY5o76C64P"
-    return token_genius
-
-
-def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
-    ser_o_no_ser: str = "aun no paso nada"
-    genius = Genius(token_genius)
-    # saca los headers
-    genius.remove_section_headers = True
-    # Exclude songs with these words in their title
-    genius.excluded_terms = ["(Remix)", "(Live)", "(Cover)"]
-    # Turn off status messages
-    genius.verbose = False
-
-    if cancion == "0" and artista == "0":
-        #Si queremos que el usuario busque el nombre de la canción manualmente
-        es_cancion: bool = False
-        while es_cancion == False:
-            cancion = input("Nombre del cantante:")
-            artista = input("Nombre de canción: ")
-            song = genius.search_song(cancion, artista)
-            print(song)
-            print("¿Es la canción que usted busca? "
-                  "[s] Si "
-                  "[n] No "
-                  "[x] dejar de buscar")
-            ser_o_no_ser = input(">>> ").lower()
-            if ser_o_no_ser == "s":
-                es_cancion = True
-            elif ser_o_no_ser == "x":
-                print("Trabajaremos para mejorar la base de datos de canciones.")
-                es_cancion = True
-            else:
-                es_cancion = False
-    else:
-        song = genius.search_song(cancion, artista)
-
-    if ser_o_no_ser != "x":
-        try:
-            letra_song: str = str(song.lyrics)
-        except AttributeError:
-            letra_song: str = ""
-    return letra_song
-
-
-def rejunte_letras(detalles: dict, servidor: str) -> str:
-    total_letrasas: str = ""
-    token_genius = ingreso_genius()
-    if servidor == "spotify":
-        for cancioncita in range(len(detalles['tracks'])):
-            letra: str = extraer_letra(token_genius, detalles['tracks'][cancioncita]['name'],
-                                       detalles['tracks'][cancioncita]['artists'][0]['name'])
-            total_letrasas = total_letrasas + letra
-    elif servidor == "youtube":
-        for cancioncita in range(len(detalles['tracks'])):
-            cancion, artista = limpieza(detalles['tracks'][cancioncita]['name'], detalles['tracks'][cancioncita]['artists'])
-            letra: str = extraer_letra(token_genius, cancion, artista)
-            total_letrasas = total_letrasas + letra
-    return total_letrasas
-
-
-###------------------------- LISTADO DE PLAYLISTS  -------------------------------------------------
-####################################################################################################
-
-
-def playlists_spotify(spotify, id_usuario) -> None:
-    datos_playlists = spotify.playlists(id_usuario)
-    nombres = [x.name for x in datos_playlists.items]
-    if nombres:
-        vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
-    else:
-        print(vis.NO_PLAYLIST)
-
-
-def listar_playlistsYT(youtube: object) -> dict:
-    request = youtube.playlists().list(
-                    part="snippet,id",
-                    maxResults=50,
-                    mine=True
-                    )
-    response = request.execute()
-
-    # Agrega nombre de playlist fuera de snippet >>>>>>>>>>>>>>>>>>>>>>
-    for playlist in response['items']:
-        playlist['name'] = playlist['snippet']['title']
-
-    return response['items']
-
-
-#### ----------------------------- MANEJO DE PERFILES ----------------------------------------------
-####################################################################################################
-
-=======
-    # uris de las canciones
-    for i in range(len(lista_agregar)):
-        search = buscar_item(spotify, token_yutub, "spotify",
-                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 5, ('track', 'artist'))
-        comparacion_con_search_spotify(search, lista_agregar[i][0], lista_agregar[i][1], uris,
-                                       lista_no_agregado)
-        # se agrega las canciones encontradas
-    spotify.playlist_add(playlist_id, uris, position=None)
-    no_se_pudo: dict = {}
-    no_se_pudo['no se pudo'] = lista_no_agregado
-    return no_se_pudo
-### ----------------------- WORDCLOUD -------------------------------------------------------------
-###################################################################################################
-
-
-def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> None:
-    print("Hola en esta seccion tenemos imagenes de palabras, si desea hacerlo con una playlist\n"
-          "de youtube marque (2) de lo contrario (1)")
-    opcion: str = input(">>>> ")
-    while opcion != "1" and opcion != "2":
-        opcion = input(" suspiro..... Vamos de nuevo (1) o (2)")
-    opcion: int = int(opcion)
-
-    detalles: dict = {}
-    mi_playlist: dict = {}
-    if opcion == 1:
-        print_playlists_de_user(usuario_actual, "spotify")
-        seleccionar_playlist(usuario_actual, mi_playlist,"spotify")
-        importar_playlist(spotify, token_youtube, mi_playlist['id'], mi_playlist['name'], "spotify", detalles)
-    elif opcion == 2:
-        print_playlists_de_user(usuario_actual, "youtube")
-        seleccionar_playlist(usuario_actual, mi_playlist, "youtube")
-        print("Puede ser que este resultado sea bastate malo, le recomiendo pasar la lista a spotify para un"
-              "mejor rendimiento :)")
-        importar_playlist(spotify, token_youtube, mi_playlist['id'], mi_playlist['name'], "youtube", detalles)
-    letra_total = rejunte_letras(detalles)
-    al_wordcloud(letra_total)
-    #mostrame_esta()
-
-
-def al_wordcloud(letra_total: str) -> None:
-    resp = requests.post('https://quickchart.io/wordcloud', json={
-        'format': 'png',
-        'width': 1000,
-        'height': 1000,
-        'fontScale': 15,
-        'scale': 'linear',
-        'maxNumWords': 10,
-        'removeStopwords': True,
-        'minWordLength': 6,
-        'text': letra_total,
-    })
-
-    with open('twice.png', 'wb') as f:
-        f.write(resp.content)
-
-
-def mostrame_esta() -> None:
-    img = cv.imread('newscloud.png')
-    cv.imwrite('modified_img.jpg', img, [int(cv.IMWRITE_JPEG_QUALITY), 100])
-    plt.imshow(img)
-    plt.show()
-
-
-### ----------------------- CREAR PLAYLISTS -------------------------------------------------------
-###################################################################################################
-
-def crear_playlist_spotify(user_id: str, spotify: object) -> str:
-    nombre: str = input("Indique el nombre para la playlist en Spotify: ")
+def crear_playlist_spotify(usuario_actual: dict) -> tuple:
+    # acá se crean las listas y devuelve el nombre que se le dio para buscar más tarde el id
+    nombre: str = input("Indique el nombre para la playlist de Spotify: ")
     publica: str = input("Indique si desea que sea publica (s/n): ")
     if publica in "sS":
         public: bool = True
     else:
         public: bool = False
-    descripcion: str = input("Indique descripción: ")
-    spotify.playlist_create(user_id, nombre, public, descripcion)
-    return nombre
+    descripcion: str = input("Indique una descripción: ")
+    datos_playlist = usuario_actual["spotify"].playlist_create(usuario_actual["id_usuario_spotify"], nombre, public, descripcion)       # ES MUY LARGO
+    print(vis.PLAYLIST_CREADA)
+    return nombre, datos_playlist.id
 
 
-def crear_playlist_youtube(token_yutub: object) -> str:
-    youtube = token_yutub
+def crear_playlist_youtube(youtube: object) -> tuple:
+    # acá lo mismo pero para youtube
     nombre: str = input("Indicame el nombre bebe: ")
     descripcion: str = input("La descripcion please: ")
-    privaciti: str = input("Privado (p) o no privado (n) esa es la cuestion: ")
-    i: int = 0
-    while privaciti != "p" and privaciti != "n":
-        i = i + 1
-        if i == 2:
-            print("Mire que no tenemos todo el dia")
-        privaciti = input("Por favor escriba correctamente")
-    if privaciti in "pP":
-        privaciti = 'private'
+    eleccion_privacidad: str = perf.input_con_control(["p", "n"], "Privado (p) o No privado (n), esa es la cuestion: ",
+                                                      2, "Mire que no tenemos todo el dia.")
+    if eleccion_privacidad == "p":
+        privaciti: str = 'private'
     else:
-        privaciti = 'public'
-    playlists_insert_response = youtube.playlists().insert(
+        privaciti: str = 'public'
+    nueva_playlist: dict = youtube.playlists().insert(
         part="snippet,status",
         body=dict(
             snippet=dict(
@@ -1113,99 +537,135 @@ def crear_playlist_youtube(token_yutub: object) -> str:
             )
         )
     ).execute()
-    return nombre
+    print(vis.PLAYLIST_CREADA)
+    return nombre, nueva_playlist["id"]
 
-def crear_playlist(user_id: str, spotify: object, token_youtube: object)->None:
-    print("Usted decidio crear playlist, elija el servidor \n"
-          "(1) Spotify\n"
-          "(2) Youtube")
-    opcion: str = input(">>> ")
-    while opcion!="1" and opcion!="2":
-        opcion = input("Solo le estoy pidiendo que ingrese numeros no me haga enojar")
-    opcion: int = int(opcion)
+
+def crear_playlist(usuario_actual: dict, token_youtube: object) -> None:
+    # la función en si para que el usuario elija en que plataforma crearlo
+    vis.youtube_spotify()
+    opcion: int = input_num_con_control(1, 3)
     if opcion == 1:
-        crear_playlist_spotify(user_id, spotify)
-    else:
         crear_playlist_youtube(token_youtube)
-
-
-
+    elif opcion == 2:
+        crear_playlist_spotify(usuario_actual)
+    else:
+        print(" Volviendo al menu...")
+        
 ### ----------------------------- ANALISIS DE PLAYLISTS -------------------------------------------
 ###################################################################################################
 
 ### Funciones reutilizables >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
-    lista_nombres: list = list()
-    if (len(usuario_actual[f'playlists_{servidor}']) == 0):
-        lista_nombres.append("No hay ninguna lista para mostrar")
+def generar_playlist_de_user(usuario_actual: dict, servidor: str) -> list:
+    """
+    Pre: Recibe la informacion del usuario y el nombre del servidor elegido.
+    Post: Devuelve una lista con las playlist (si es que las hay) del servidor pasado por parametro.
+    """
+    if servidor == "spotify":
+        datos_playlists: list = datos_playlists_SP(usuario_actual["spotify"], usuario_actual["id_usuario_spotify"])
     else:
-        for playlist in usuario_actual[f'playlists_{servidor}']:
-            lista_nombres.append(playlist['name'])
-    vis.visual_lista_elementos(lista_nombres, f"Playlists de {servidor}", True)
+        datos_playlists: list = datos_playlists_YT(usuario_actual["youtube"])    
+    return datos_playlists
 
-def playlist_segun_servidor(usuario_actual: dict) -> str:
-    print("Desea listar: \n"
-          "[1] Playlist de Spotify\n"
-          "[2] Playlist de Youtube\n"
-          "[3] Mostrar ambas")
-    seleccion = input_num_con_control(1,3)
 
-    if seleccion == 1:
-        print_playlists_de_user(usuario_actual, "spotify")
-        servidor: str = "spotify"
-    elif seleccion == 2:
-        print_playlists_de_user(usuario_actual, "youtube")
-        servidor: str = "youtube"
+def print_playlists_de_user(servidor: str, datos_playlists: list) -> None:
+    #Recibe la informacion un servidor y una lista con las playlists del usuario.
+    #Muestra por pantalla una lista con las playlists recibidas (si es que las hay).
+    if len(datos_playlists) == 0:
+        vis.no_playlist(servidor)
+    elif datos_playlists and datos_playlists[0] == "SIN INTERNET":
+        print("Necesitamos internet para esto, intentalo despues.")
     else:
-        print_playlists_de_user(usuario_actual, "spotify")
-        print_playlists_de_user(usuario_actual, "youtube")
-        servidor: str = "unknown"
+        nombres_playlists = [playlist["nombre"] for playlist in datos_playlists]
+        vis.visual_lista_elementos(nombres_playlists, f"Playlists de {servidor}", True)
+    
+def seleccion_servidor() -> str:
+    #Devuelve un str del servidor elegido por el user entre las opciones disponibles
+    servidor: str = input("Ingrese el servidor en el que desea buscar: ").lower()
+    while not servidor == "spotify" and not servidor == "youtube":
+        servidor: str = input("Servidor inválido, vuelva a ingresar >>> ").lower()
     return servidor
 
+def playlist_segun_servidor(usuario_actual: dict, elegir_ambas: bool = True) -> tuple:
+    #Recibe la información de usuario
+    #Devuelve el nombre del servidor en el que elige trabajar el usuario
+    vis.youtube_spotify(mostar_ambas=True)
+    seleccion: int = input_num_con_control(1,3)
+    print("Obteniendo datos...")
+    if seleccion == 1:
+        datos_playlists: list = generar_playlist_de_user(usuario_actual, "youtube")
+        print_playlists_de_user("youtube", datos_playlists)
+        servidor: str = "youtube"
+    elif seleccion == 2:
+        datos_playlists: list = generar_playlist_de_user(usuario_actual, "spotify")
+        print_playlists_de_user("spotify", datos_playlists)
+        servidor: str = "spotify"
+    else:
+        datos_playlists: list = []
+        datos_playlists_YT: list = generar_playlist_de_user(usuario_actual, "youtube")
+        datos_playlists_SP: list = generar_playlist_de_user(usuario_actual, "spotify")
+        print_playlists_de_user("youtube", datos_playlists_YT)
+        print_playlists_de_user("spotify", datos_playlists_SP)
+        servidor: str = "unknown"
 
-def comprobar_permisos(usuario_actual:dict, servidor:str, seleccion:int) -> bool:
-    permitido: bool = False
-
-    if servidor == "spotify":
-        id : str= usuario_actual["playlists_spotify"][seleccion - 1]['id']
-        if usuario_actual["playlists_spotify"][seleccion - 1]['collaborative']:
-            permitido = True
+    if not elegir_ambas and seleccion == 3:
+        servidor: str = seleccion_servidor()
+        if servidor == "spotify":
+            datos_playlists: list = datos_playlists_SP
         else:
-            spotify = usuario_actual['spotify']
-            owner_playlist = spotify.playlist(id).owner
-            if owner_playlist.id == usuario_actual['id_usuario_spotify']:
-                permitido = True
+            datos_playlists: list = datos_playlists_YT
+
+    return servidor, datos_playlists
+
+
+def comprobar_permisos(usuario_actual: dict, servidor:str, seleccion:int, datos_playlists: list) -> bool:
+    #Recibe la información de usuario y el indice de playlist elegido
+    #Devuelve si esta permitido hacer cambios en la playlist
+    #Será true si es colaborativa o propiedad del usuario
+    permitido: bool = False
+    if servidor == "spotify":
+        if datos_playlists[seleccion - 1]['collaborative']:
+            permitido: bool = True
+        else:
+            dueño_playlist = datos_playlists[seleccion - 1]['dueño']
+            if dueño_playlist["id"] == usuario_actual['id_usuario_spotify']:
+                permitido: bool = True
     return permitido
 
-
-
-def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, permisos:bool = False) -> None:
-    permitido : bool = False
+def seleccionar_playlist(usuario_actual, datos_playlists: list, servidor: str, permisos: bool = False) -> int:
+    permitido: bool = False
     print("Seleccione una playlist ")
-    seleccion = input("    >>> ")
-    while not seleccion.isnumeric() or int(seleccion)<1:
-        seleccion = input("Inválido. Vuelva a ingresar >>> ")
-    seleccion = int(seleccion)
+    seleccion: int = input_num_con_control(1, len(datos_playlists))
+    permitido: bool = comprobar_permisos(usuario_actual, servidor, seleccion, datos_playlists)
+    while servidor == "spotify" and permisos and not permitido:
+        print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
+        seleccion = input_num_con_control(1, len(datos_playlists))
+        permitido = comprobar_permisos(usuario_actual, servidor, seleccion, datos_playlists)    
+    return seleccion-1
 
-    if servidor == "spotify" and seleccion>len(usuario_actual['playlists_spotify']):
-        print("Número de playlist ingresado inválido.")
-    elif servidor == "youtube" and seleccion>len(usuario_actual['playlists_youtube']):
-        print("Número de playlist ingresado inválido.")
-    else:
-        permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-        while servidor == "spotify" and permisos and not permitido:
-            print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
-            seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
-            permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-
-        mi_playlist['servidor'] = servidor
-        mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
-        mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id']
-
+def tracks_playlist_spotify(spotify: object, id_playlist_elegida: str) -> list:   # Revisar typing
+    datos_buscados: str = "items(track(artists(name), id, name, track_number, uri))"
+    datos_tracks_desordenado: dict = spotify.playlist_items(id_playlist_elegida, datos_buscados, as_tracks=True)
+    datos_tracks: list = []
+    if datos_tracks_desordenado["items"]:
+        for dato in datos_tracks_desordenado["items"]:
+            datos_track: dict = {}
+            datos_track["nombre"] = dato["track"]["name"]
+            datos_track["id"] = dato["track"]["id"]
+            artistas: list = []
+            for artista in dato["track"]["artists"]:
+                artistas.append(artista["name"])
+            datos_track["artistas"] = artistas
+            datos_track["numero_track"] = dato["track"]["track_number"]
+            datos_track["uri"] = dato["track"]["uri"]
+            datos_tracks.append(datos_track)
+    return datos_tracks
 
 def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
                                 playlist_id:str, playlist_nombre:str) -> None:
+    #Recibe los datos dados por la api en list info_playlist
+    #Devuelve los datos con las keys asignadas en dict detalles
     detalles['id'] = playlist_id
     detalles['name'] = playlist_nombre
     detalles['tracks']= []
@@ -1226,8 +686,49 @@ def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
                 }
         )
 
+def normalizar_tracks_youtube(datos_desordenados: dict) -> list:
+    datos_tracks: list = []
+    for dato in datos_desordenados:
+        datos_tracks.append(
+                {'nombre': dato['snippet']['title'],
+                 'id': dato['id'],
+                 'artistas': dato['snippet']['videoOwnerChannelTitle'],
+                 'numero_track': dato['snippet']['position'],
+                 'uri': 'desconocido'
+                 }
+        )
+    return datos_tracks
+
+
+def tracks_playlist_youtube(youtube: object, id_playlist_elegida: str) -> list:   # Revisar typing
+    datos_tracks: list = []
+    response = youtube.playlistItems().list(
+                    part="snippet",
+                    playlistId=id_playlist_elegida,
+                    maxResults="50"
+                    ).execute()
+
+    nextPageToken = response.get("nextPageToken")
+    while ("nextPageToken" in response):
+        nextPage = youtube.playlistItems().list(
+                        part="snippet",
+                        playlistId=id_playlist_elegida,
+                        maxResults="50",
+                        pageToken=nextPageToken
+                        ).execute()
+        response["items"] = response["items"] + nextPage["items"]
+
+        if "nextPageToken" not in nextPage:
+            response.pop("nextPageToken", None)
+        else:
+            nextPageToken = nextPage["nextPageToken"]
+    datos_tracks: list = normalizar_tracks_youtube(response['items'])
+    return datos_tracks
+
 
 def normalizar_playlist_youtube(info_playlist:list, detalles:dict, playlist_id:str, playlist_nombre:str) -> None:
+    #Recibe los datos dados por la api en list info_playlist
+    #Devuelve los datos con las keys asignadas en dict detalles
     detalles['id'] = playlist_id
     detalles['name'] = playlist_nombre
     detalles['tracks'] = []
@@ -1250,22 +751,13 @@ def normalizar_playlist_youtube(info_playlist:list, detalles:dict, playlist_id:s
 
 def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, playlist_nombre:str,
                       servidor:str, detalles_playlist:dict) -> None:
-
+    #Recibe una playlist (nombre, id, servidor) y los objetos de los servidores disponibles
+    #La devuelve con todos sus items detallados
     info_playlist:list=list()
     if servidor == "spotify":
         info_playlist.append(Spotify.playlist(spotify, playlist_id, fields=None, market=None, as_tracks=True))
-
         normalizar_playlist_spotify(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
     elif servidor == "youtube":
-        """ # !!! to-do!!!
-        # ver cuando una playlist tiene +50 elementos
-        youtube = token_youtube
-        request = youtube.playlistItems().list(
-            part="id, snippet, contentDetails",
-            maxResults=50,
-            playlistId=playlist_id
-        )
-        response = request.execute() """
         youtube: object = token_youtube
         response = youtube.playlistItems().list(
                     part="snippet",
@@ -1293,75 +785,79 @@ def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, pla
         normalizar_playlist_youtube(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
 
 
-def exportar_dict_a_cvs(extension:str, usuario:str, mi_dict:dict, nombre:str) -> None:
+def exportar_dict_a_csv(extension:str, usuario:str, mi_dict:dict, nombre:str) -> None:
     # Funciona para un solo dict, no nested dicts, y reescribe el archivo
-    with open(f"{nombre}_{usuario}.{extension}", "w") as archivito:
+    #Recibe un dict, lo guarda como archivo csv
+    with open(f"analisis_{nombre}_de_{usuario}.{extension}", "w") as archivito:
         w = csv.DictWriter(archivito, mi_dict.keys())
         w.writeheader()
         w.writerow(mi_dict)
+    # else:
+    #     with open(f"analisis_playlists_de_{usuario}.{extension}", "a") as archivito:
+    #         w = csv.DictWriter(archivito, mi_dict.keys())
+    #         w.writerow(mi_dict)
 
 
 ### Funciones propias del analisis de atributos >>>>>>>>>>>>>>>>>>>>>>>>
 
-def analizar_track(track:dict, atributos_track:dict, spotify:object, atributos:list, servidor:str='spotify') -> None:
+def analisis_de_playlist(usuario_actual: dict) -> None:
+    #Recibe los datos del usuario y selecciona una playlist de una lista para analizar
+    #Llama a las funciones necesarias para el analisis
+    servidor, datos_playlists = playlist_segun_servidor(usuario_actual, False)
+    if not datos_playlists:
+        print(f" Sin playlists no podemos realizar ningun analisis.")
+        input("Presione Enter volver al menu principal: ")
+    else:
+        indice_playlist_elegida: int = seleccionar_playlist(usuario_actual, datos_playlists, servidor)
+        if datos_playlists[indice_playlist_elegida]["cant_tracks"] == 0:
+            print("La playlist elegida esta vacia, no pudimos realizar un analisis.")
+            input("Presione Enter para volver al menu principal: ")
+        else:
+            realizar_analisis_playlist(usuario_actual, datos_playlists[indice_playlist_elegida], servidor)
+
+def analizar_track(track: dict, atributos_track: dict, spotify: object, atributos: list, servidor: str = 'spotify') -> None:
+    # Recibe un dict con un track de Spotify
+    # Le agrega a atributos_track los atributos de cada track
     if servidor == "spotify":
-        # !!! to-do !!!
-        # Ver si es necesario controlar esto:
-        # if not track.episode and not track.is_local:
-        print(f"Analizando track {track['name']}...\n")
+        print(f"Analizando track {track['nombre']}...\n")
         analisis = spotify.track_audio_features(track['id'])
 
         for atrib in atributos:
             atributos_track[atrib] = getattr(analisis, atrib)
 
-
-def analisis_de_playlist(usuario_actual:dict) -> None:
-    fecha = date.today()
-    mi_playlist:dict=dict()
-    atributos_playlist:dict={}
+def realizar_analisis_playlist (usuario_actual: dict, playlist_elegida: dict, servidor: str) -> None:
+    #Recibe datos de usuario y de la playlist a analizar atributos
+    #Guarda un csv con los atributos promediados
+    atributos_playlist: dict = {}
     atributos_track: dict = {}
-    detalles_playlist: dict=dict()
-    # atributos_playlist:dict:
-    #     {
-    #     fecha de analisis : object??
-    #     id : str
-    #     name: str
-    #     atributo: int,
-    #     atributo2: int,
-    #     ...
-    # }
+    fecha = date.today()
+
     atributos: list = [
         'acousticness', 'danceability', 'energy', 'liveness', 'loudness',
         'valence', 'tempo', 'duration_ms', 'instrumentalness', 'speechiness'
     ]
-    servidor:str = playlist_segun_servidor(usuario_actual)
-    if servidor == "unknown":
-        servidor = seleccion_servidor()
 
-    seleccionar_playlist(usuario_actual, mi_playlist, servidor)
-
-    if mi_playlist['servidor'] == "spotify":
-        importar_playlist(usuario_actual['spotify'], usuario_actual['token_youtube'], mi_playlist['id'],
-                          mi_playlist['name'], mi_playlist['servidor'], detalles_playlist)
-        for track in detalles_playlist['tracks']:
+    if servidor == "spotify":
+        tracks_spotify: list = tracks_playlist_spotify(usuario_actual["spotify"], playlist_elegida["id"])
+        for track in tracks_spotify:
             try:
                 analizar_track(track, atributos_track, usuario_actual['spotify'], atributos)
                 for key,value in atributos_track.items():
                     if atributos_playlist == {} and key not in atributos_playlist.keys():
                         atributos_playlist['fecha de analisis'] = fecha
-                        atributos_playlist['id'] = detalles_playlist['id']
-                        atributos_playlist['playlist name'] = detalles_playlist['name']
+                        atributos_playlist['id'] = playlist_elegida["id"]
+                        atributos_playlist['playlist name'] = playlist_elegida["id"].encode()
                         atributos_playlist[key] = value
                     elif key not in atributos_playlist.keys():
                         atributos_playlist[key] = value
                     else:
                         atributos_playlist[key] += value
-                exportar_dict_a_cvs('cvs', usuario_actual['username'], atributos_playlist,
-                                    f"atributos_playlist_{mi_playlist['id']}")
+                exportar_dict_a_csv('csv', usuario_actual['username'], atributos_playlist,
+                                    playlist_elegida['id'])
             except TimeoutError:
                 print(vis.NO_INTERNET)
 
-        if os.path.isfile(f'atributos_playlist_{mi_playlist["id"]}_{usuario_actual["username"]}.cvs'):
+        if os.path.isfile(f"analisis_{playlist_elegida['id']}_de_{usuario_actual['username']}.csv"):
             print(f"Se ha creado un archivo con los atributos de la playlist {atributos_playlist['playlist name']} \n"
                   f"en el directorio {os.getcwd()}")
         else:
@@ -1373,21 +869,27 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
         print("Podemos sincronizar con spotify y realizar el analisis de las canciones que estén en esa plataforma.")
         sincronizar:str = input("[S] aceptar \nCualquier [Tecla] volver\n     >>>   ").lower()
         if sincronizar == "s":
-            sincronizacion_youtube_a_spotify()
-            pass #!!! TO-DO
+            sincronizacion_de_emergencia(usuario_actual, playlist_elegida)
 
 
+def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
+    #recibe una playlist de youtube (dict mi_playlist)
+    #la sincroniza con spotify para realizar el analisis de los atributos de los tracks
+    temp_spotify: dict = dict()
+    detalles_spotify: dict = dict()
+    detalles_youtube: dict = dict()
+    nueva_playlist:dict = sincronizacion_youtube_a_spotify(usuario_actual, temp_spotify, detalles_spotify,
+                                     usuario_actual['youtube'], usuario_actual['id_usuario_youtube'],
+                                     mi_playlist, detalles_youtube, usuario_actual['spotify'], True)
+    realizar_analisis_playlist(usuario_actual, nueva_playlist)
 
 ### ------------------------ BÚSQUEDA DE CANCIONES ------------------------------------------------
 ###################################################################################################
 
-def seleccion_servidor() -> str:
-    servidor = input("Ingrese el servidor en el que desea buscar: ").lower()
-    while not servidor == "spotify" and not servidor == "youtube":
-        servidor = input("Servidor inválido, vuelva a ingresar >>> ").lower()
-    return servidor
-
 def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servidor:str) -> None:
+    # Recibe objetos de los servidores, resultados como lista vacia y el servidor elegido
+    # Devuelve resultados con los datos de resultados de busqueda ya ordenados
+
     datos_parseados : list = list()
     # Recibe resultados como list vacia para poder devolver las canciones de la búsqueda.
     # resultados:list = [
@@ -1403,7 +905,6 @@ def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servid
     cancion = input("Ingrese el nombre de la canción a buscar >>> ")
     artista = input("Ingrese el artista >>> ")
     search = buscar_item(spotify, token_youtube, servidor, f"{cancion} {artista}", 3, ('track', ))
-    # search = buscar_item(spotify, token_youtube, servidor, f"{cancion}, {artista}", 3, ('track', 'artist'))
 
     if servidor == "spotify":
         print("Buscando en spotify...")
@@ -1435,8 +936,9 @@ def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servid
             resultados.append(item_n)
 
 
-
 def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, limit:int, types:tuple=('track',))-> tuple:
+    #Recibe objetos de las app, los datos de busqueda como query, maximo de resultados como limit
+    #Devuelve search con los resultados de la busqueda en la api
     if servidor == "spotify":
         # cambiando el tipo podemos buscar playlists, albums, artistas, etc
         search = spotify.search(query, types=types, market=None, include_external=None, limit=limit, offset=0)
@@ -1452,12 +954,11 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
 
     return search
 
-
-
 ### ------------------------ ACCIONES POSTERIORES A BÚSQUEDA --------------------------------------
 ###################################################################################################
 
 def agregar_cancion_a_youtube(playlist_id: str, cancion_id: str, youtube: object) -> None:
+    #Agrega una canción a youtube
     request = youtube.playlistItems().insert(
         part="snippet",
         body={
@@ -1471,21 +972,19 @@ def agregar_cancion_a_youtube(playlist_id: str, cancion_id: str, youtube: object
         }
     )
     response = request.execute()
-    print(response)
 
 
-def agregar_a_playlist(usuario_actual:dict, cancion:dict, servidor:str) -> None:
-    mi_playlist: dict = dict()
-
-    seleccionar_playlist(usuario_actual, mi_playlist, servidor, True)
-
-    if mi_playlist['servidor'] == 'spotify':
-        agregar_cancion_a_spotify(mi_playlist['id'], [cancion['uri']], usuario_actual['spotify'])
-    elif mi_playlist['servidor'] == 'youtube':
-        agregar_cancion_a_youtube(mi_playlist['id'], cancion['id'], usuario_actual['token_youtube'])
+def agregar_a_playlist(usuario_actual:dict, cancion: dict, servidor:str, playlist: dict) -> None:
+    #Agrega una canción a una playlist
+    if servidor == 'spotify':
+        agregar_cancion_a_spotify(playlist['id'], [cancion['uri']], usuario_actual['spotify'])
+    elif servidor == 'youtube':
+        agregar_cancion_a_youtube(playlist['id'], cancion['id'], usuario_actual['youtube'])
 
 
 def agregar_cancion_a_spotify(playlist_id:str, uri_cancion:list, spotify:object) -> None:
+    #Agrega canciones a spotify (acepta multiples canciones)
+    #uri_cancion recibe una lista de hasta 100 uris
     try:
         spotify.playlist_add(playlist_id, uri_cancion)
         print("Canción agregada correctamente")
@@ -1493,8 +992,9 @@ def agregar_cancion_a_spotify(playlist_id:str, uri_cancion:list, spotify:object)
         print(vis.NO_INTERNET)
 
 
-
 def info_html_de_youtube(cancion:dict) -> None:
+    #recibe informacion de cancion en youtube en dict
+    #devuelve track y artista del html usando libreria youtube_dl
     track: str =""
     artista: str = ""
     try:
@@ -1514,11 +1014,13 @@ def info_html_de_youtube(cancion:dict) -> None:
 
 
 def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
+    # Recibe dict de canción y servidor
+    # Muestra el nombre, artista y la letra de la canción
     nombre = cancion['name']
     artistas: str = ','.join(cancion['artists'])
 
     vis.mostrar_cancion(cancion, seleccion)
-    token_genius: str = ingreso_genius()
+    token_genius: str = perf.sacar_info_json("credenciales.json")["genius"]["token_genius"]
     letra: str = extraer_letra(token_genius, nombre, artistas)
     if letra == "":
         print("No se ha encontrado ninguna letra para esta canción.")
@@ -1529,8 +1031,8 @@ def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
         print("\n- [x] Si la letra mostrada es incorrecta y quiere "
                         "volver a buscarla\n- Cualquier [Tecla] para finalizar")
 
-    es_la_letra = input("     >>>   ")
-    if es_la_letra in "xX":
+    es_la_letra = input("     >>>   ").lower()
+    if es_la_letra == "x":
         if servidor == "youtube":
             print("[1] Ingresar nombre manualmente \n"
                   "[2] Extraer información con la libreria youtube_dl")
@@ -1550,19 +1052,21 @@ def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
             print("No pudimos encontrar la letra que buscaba. ")
         else:
             print(letra)
-
         input("Presione una tecla para volver al menu >>> ")
 
 
-def administracion_de_canciones(usuario_actual:dict) -> None:
+def administracion_de_canciones(usuario_actual: dict) -> None:
+    #Recibe datos de usuario
+    #Mediante funciones auxiliares, busca canción en servidores
+    #Ofrece visualizarla o agregarla a playlist
     resultados: list = list()
     titulo: str = "Administrar canción"
     opciones: list = [
         "Visualizar", "Agregar a playlist"
     ]
 
-    servidor = seleccion_servidor()
-    buscar_cancion(usuario_actual['spotify'], usuario_actual['token_youtube'], resultados, servidor)
+    servidor: str = seleccion_servidor()
+    buscar_cancion(usuario_actual['spotify'], usuario_actual['youtube'], resultados, servidor)
     if len(resultados) > 0:
         print(f"""\n     Resultados de búsqueda""")
         for i in range(len(resultados)):
@@ -1581,36 +1085,39 @@ def administracion_de_canciones(usuario_actual:dict) -> None:
             visualizar_cancion(resultados[seleccion_cancion-1], seleccion_cancion, servidor)
         else:
             print("Vamos a elegir una playlist de la lista")
-            print_playlists_de_user(usuario_actual, servidor)
-            agregar_a_playlist(usuario_actual, resultados[seleccion_cancion-1], servidor)
+            playlists: list = generar_playlist_de_user(usuario_actual, servidor)
+            if playlists:
+                print_playlists_de_user(servidor, playlists)
+                print("Seleccione una playlist ")
+                indice_playlist_elegida: int = input_num_con_control(1, len(playlists))
+                playlist_elegida: dict = playlists[indice_playlist_elegida-1]
+                agregar_a_playlist(usuario_actual, resultados[seleccion_cancion-1], servidor, playlist_elegida)
+            else:
+                print("Ups, no hay playlist") # Aqui para que vaya a agregar playlists.
     else:
         print("No hemos obtenido ningún resultado de la búsqueda")
 
-
 ###------------------------- MANEJO DE LYRICS ------------------------------------------------------
 ####################################################################################################
-def ingreso_genius()->str:
-    client_id: str = "LkrBCrYXlZO4Wm7Hx1X-AU0g9z_bNYc2ehowpFLNhgcVa-MdX8J1zceedRf59FNN"
-    client_secret: str = "nRzbwpwEiEcic8uN9qyXRKAwo8O2e48lstan5rtc8F8FKIw6QbY1DUGV8P_FTzom763BRHuJWKcowt7jm9U8mQ"
-    token_genius: str = "OomA5Dwkt15uqiCNHKthDcDx7gqYbFAkXeQFoX_DHqu-C6NQzyuBoxOY5o76C64P"
-    return token_genius
-
 
 def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
+    # Recibe token de genius y datos de cancion (nombre y artista)
+    # Devuelve la letra, si no la encuentra devuelve str = ""
+    # Si no recibe nombre ni artista, el usuario los ingresa manualmente
     ser_o_no_ser: str = "aun no paso nada"
     genius = Genius(token_genius)
     # saca los headers
     genius.remove_section_headers = True
-    # Exclude songs with these words in their title
+    # Excluye canciones que tengan esos nombres
     genius.excluded_terms = ["(Remix)", "(Live)", "(Cover)"]
-    # Turn off status messages
+    # Saca mensajes sobre el estatus de la canción
     genius.verbose = False
 
     if cancion == "0" and artista == "0":
         #Si queremos que el usuario busque el nombre de la canción manualmente
         es_cancion: bool = False
         while es_cancion == False:
-            cancion = input("Nombre del cantante:")
+            cancion = input("Nombre del cantante: ")
             artista = input("Nombre de canción: ")
             song = genius.search_song(cancion, artista)
             print(song)
@@ -1637,525 +1144,111 @@ def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
     return letra_song
 
 
-def rejunte_letras(detalles: dict) -> str:
-    token_genius = ingreso_genius()
+def rejunte_letras(tracks: list, playlist: dict, servidor: str) -> str:
     total_letrasas: str = ""
-    for cancioncita in range(len(detalles['tracks'])):
-        letra: str = extraer_letra(token_genius, detalles['tracks'][cancioncita]['name'],
-                                   detalles['tracks'][cancioncita]['artists'])
-        total_letrasas = total_letrasas + letra
+    # se recibe el token
+    token_genius: str = perf.sacar_info_json("credenciales.json")["genius"]["token_genius"]
+    if servidor == "spotify":
+        # se busca las canciones de spotify directamente
+        for cancioncita in tracks:
+            letra: str = extraer_letra(token_genius, cancioncita['nombre'], cancioncita["artistas"][0])     # Que pasa con los otros artistas?
+            # se suman
+            total_letrasas = total_letrasas + letra
+    elif servidor == "youtube":
+        for cancioncita in tracks:
+            # aca hay que hacer una limpieza porque sino no da nada
+            cancion, artista = limpieza(cancioncita["nombre"], cancioncita["artistas"])
+            letra: str = extraer_letra(token_genius, cancion, artista)
+            total_letrasas = total_letrasas + letra
     return total_letrasas
-
 
 ###------------------------- LISTADO DE PLAYLISTS  -------------------------------------------------
 ####################################################################################################
 
-
 def playlists_spotify(spotify, id_usuario) -> None:
-    datos_playlists = spotify.playlists(id_usuario)
+    """ Recupera la información de las playlists de Spotify de un usuario """
+    datos_playlists = spotify.playlists(id_usuario, 50)
     nombres = [x.name for x in datos_playlists.items]
     if nombres:
         vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
     else:
-        print(vis.NO_PLAYLIST)
-
-
-def listar_playlistsYT(youtube: object) -> dict:
-    request = youtube.playlists().list(
-                    part="snippet,id,status",
-                    maxResults=50,
-                    mine=True
-                    )
-    response = request.execute()
-    
-    # En caso de que haya más de 50 resultados: 
-    nextPageToken = response.get("nextPageToken")
-    while ("nextPageToken" in response):
-        nextPage = youtube.playlists().list(
-                        part="snippet",
-                        maxResults="50",
-                        pageToken=nextPageToken
-                        ).execute()
-        response["items"] = response["items"] + nextPage["items"]
-
-        if "nextPageToken" not in nextPage:
-            response.pop("nextPageToken", None)
-        else:
-            nextPageToken = nextPage["nextPageToken"]
-
-    # Agrega nombre de playlist fuera de snippet >>>>>>>>>>>>>>>>>>>>>>
-    for playlist in response['items']:
-        playlist['name'] = playlist['snippet']['title']
-
-    return response['items']
-
-
-#### ----------------------------- MANEJO DE PERFILES ----------------------------------------------
-####################################################################################################
-
-
-def escribir_json(datos, nombre_archivo):
-    """Crea, si aun no existe, un archivo json con el nombre y los datos dados por parametro."""
-    with open(nombre_archivo, "w") as f:
-        json.dump(datos, f, indent=3)
-
-
-def sacar_info_json(nombre_archivo) -> dict:
-    """Devuelve toda la informacion que hay en el archivo json."""
-    with open(nombre_archivo) as f:
-        datos_del_archivo = json.load(f)
-    return datos_del_archivo
-
-
-def guardar_spotify_en_json(nombre: str, refresh_token: str = "") -> None:
-    """Guarda los datos recibidos en un archivo json (si no existe, se crea aqui)."""
-    datos_existentes: dict = {}
-    perfil_a_guardar: dict = {nombre: {"spotify": refresh_token}}
-    if os.path.isfile("datos_perfiles.json"):
-        datos_existentes: dict = sacar_info_json("datos_perfiles.json")
-    datos_existentes.update(perfil_a_guardar)
-    escribir_json(datos_existentes, "datos_perfiles.json")
-
-
-def nombres_perfiles_guardados() -> list:
-    """Devuelve los nombres que estan el archivo json de los perfiles, si no lo encuentra devuelve una lista vacia."""
-    if not os.path.isfile("datos_perfiles.json"):
-        return []
-    with open("datos_perfiles.json") as f:
-        datos = json.load(f)
-        return list(datos.keys())
-
-
-def nombre_perfil() -> str:
-    """Le pide un nombre al usuario y, si ese nombre no es un string vacio o ya existe, lo devuelve."""
-    nombre_disponible: bool = False
-    nombres_usados: list = nombres_perfiles_guardados()
-    while not nombre_disponible:
-        nombre: str = input("Ingresa el nombre del perfil: ")
-        if not nombres_usados:
-            nombre_disponible: bool = True
-        elif nombre and (nombre not in nombres_usados):
-            nombre_disponible: bool = True
-        else:
-            print(vis.NOMBRE_NO_VALIDO)
-            print(" Intentalo de nuevo.")
-    return nombre
-
-
-
-def nuevo_perfil():
-
-    """Guarda el perfil solo si acepto los permisos de al menos una plataforma."""
-    nombre: str = nombre_perfil()
-    opciones_elegidas: list = []
-    terminar: bool = False
-    while not terminar:
-        vis.youtube_spotify(True, opciones_elegidas)
-        opcion = input_num_con_control(1,3)
-        if opcion == 1:
-            obj_youtube = autenticarYT()
-            if obj_youtube:
-                opciones_elegidas.append(opcion)
-        elif opcion == 2:
-            refresh_token: str = autenticar_spotify()
-            if refresh_token:
-                opciones_elegidas.append(opcion)
-        elif opcion == 3 and opciones_elegidas and (1 not in opciones_elegidas or 2 not in opciones_elegidas):
-            if 1 not in opciones_elegidas: falta: str = "Youtube"
-            else: falta: str = "Spotify"
-            vis.falta_plataforma(falta)
-        elif opcion == 3 and opciones_elegidas:
-            if 1 in opciones_elegidas: guardar_youtube_en_json(nombre, obj_youtube)
-            if 2 in opciones_elegidas: guardar_spotify_en_json(nombre, refresh_token)
-            print(vis.DATOS_GUARDADOS)
-            terminar: bool = True
-        else:
-            terminar: bool = True
-
-
-def elegir_perfil(perfil: dict) -> str:
-    """
-    Pre: Recibe un diccionario con los datos del perfil actual.
-    Post: Se le imprime un lista de perfiles y devuelve un string con el perfil elegido.
-          Si no eligio, no hubo perfiles para elegir o si eligio el perfil actual entonces devuelve un string vacio.
-    """
-    perfil_elegido: str = ""
-    nombres_perfiles: list = nombres_perfiles_guardados()
-    nombres_perfiles.append("NO ELEGIR PERFIL")
-    if len(nombres_perfiles) == 1:
-        print(vis.NO_PERFILES)
-        return perfil_elegido
-    vis.visual_lista_elementos(nombres_perfiles, "Perfiles Guardados", True)
-    # numeros_permitidos: list = [x for x in range(1,len(nombres_perfiles)+1)]
-    opcion = input_num_con_control(1,len(nombres_perfiles))
-    if opcion == len(nombres_perfiles):
-        return perfil_elegido
-    if perfil["username"] and perfil["username"] == nombres_perfiles[opcion-1]:   # CUANDO VUELVE A ELEGIR PERFIL, PARA QUE NO ELIJA EL MISMO
-        return perfil_elegido
-    perfil_elegido: str = nombres_perfiles[opcion-1]
-    return perfil_elegido
-
-
-def manejo_perfiles(perfil: dict):
-    """
-    Genera un menu para crear y guardar perfiles junto con la opcion de elegir uno de los perfiles guardados.
-    Si eligio un perfil entonces el nombre se guardara en el diccionario recibido.
-    """
-    terminar: bool = False
-    while not terminar:
-        vis.menu_perfiles(perfil["username"])
-        opcion = input_num_con_control(1,3)
-        if opcion == 1:
-            perfil_elegido: str = elegir_perfil(perfil)                             # EN REVISION
-            if perfil_elegido:
-                perfil["username"] = perfil_elegido
-
-        elif opcion == 2:
-            refresh_token: str = autenticar_spotify(credenciales_SP)
-            if refresh_token:
-                opciones_elegidas.append(opcion)
-        elif opcion == 3 and opciones_elegidas and (1 not in opciones_elegidas or 2 not in opciones_elegidas):
-            if 1 not in opciones_elegidas: falta: str = "Youtube"
-            else: falta: str = "Spotify"
-            vis.falta_plataforma(falta)
-        elif opcion == 3 and opciones_elegidas:
-            if 1 in opciones_elegidas: guardar_youtube_en_json(nombre, obj_youtube)
-            if 2 in opciones_elegidas: guardar_spotify_en_json(nombre, refresh_token)
-            print(vis.DATOS_GUARDADOS)
-            terminar: bool = True
-        else:
-            terminar: bool = True
-#### ----------------------------- AUTENTICACIÓN SPOTIFY ------------------------------------------
-###################################################################################################
-
-def autenticar_spotify(credenciales_SP: tuple) -> str:
-    """Devuelve un refresh_token si la autenticacion salio bien, caso contrario devuelve un string vacio."""
-    refresh_token: str = ""
-    credenciales: tk.RefreshingCredentials = tk.RefreshingCredentials(credenciales_SP[0], credenciales_SP[1],
-                                                                      credenciales_SP[2])
-    auth: tk.UserAuth = tk.UserAuth(credenciales, SCOPE)
-    print(vis.INSTRUCCIONES)
-    input("Presione Enter para que se abra Spotify: ")
-    web_open(auth.url)
-    print()
-    print("Aqui abajo debes ingresar la URL que copiaste:  ")
-    url: str = input("--->  ").strip()
-    try:
-        token: tk.RefreshingToken = auth.request_token(url=url)
-    except:
-        print(vis.ERROR_URL)
-    else:
-        refresh_token: str = token.refresh_token
-        print(vis.DATOS_GUARDADOS)
-    return refresh_token
+        vis.no_playlist("spotify")
 
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
+
 def obtener_credYT(nombre: str) -> dict:
-    """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un
+    """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
     diccionario vacío"""
-    if not os.path.isfile("datos_perfiles.json"):
-        return {}
-    with open("datos_perfiles.json") as f:
-        datos = json.load(f)
-    return datos[nombre]["youtube"]
-
-
-def obtener_refresh_token_perfil(nombre: str) -> str:
-    """Devuelve el refresh_token del nombre recibido, si el archivo de donde lo saca no esta entonces devuelve un str vacio."""
-    if not os.path.isfile("datos_perfiles.json"):
-        return ""
-    with open("datos_perfiles.json") as f:
-        datos = json.load(f)
-    return datos[nombre]["spotify"]
-
-
-def conseguir_datos_playlistsYT(youtube: object) -> list:
-    lista_dicc_playlistsYT: list = []
-    data_response: dict = listar_playlistsYT(youtube)
-    for i in range(len(data_response)):
-        diccionario: dict = {}
-        diccionario["name"] = data_response[0]["snippet"]["title"]
-        diccionario["id"] = data_response[0]["snippet"]["id"]
-        diccionario["collaborative"] = data_response[0]["status"]["privacyStatus"]
-        diccionario["description"] = data_response[0]["snippet"]["description"]
-        lista_dicc_playlistsYT.append(diccionario)
-    return lista_dicc_playlistsYT
-
-
-def conseguir_datos_playlistsSpotify(spotify, id_usuario):
-    """
-    Pre: Recibe un objeto spotify (ya con los datos de nuestro perfil elegido) y el id de Spotify del perfil actual.
-    Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
-    """
-    datos = []
-    datos_playlists = spotify.playlists(id_usuario)  # Que pasa si el usuario no tiene playlists?
-    for playlist in datos_playlists.items:
-        diccionario: dict = {}  # Deberia cambiarle el nombre.
-        diccionario["name"] = playlist.name
-        diccionario["id"] = playlist.id
-        diccionario["collaborative"] = playlist.collaborative
-        diccionario["description"] = playlist.description
-        """
-        canciones = []
-        for cancion in spotify.playlist_items(playlist.id).items:
-            canciones.append(cancion.track.name)
-        diccionario["tracks"] = canciones
-        """
-        datos.append(diccionario)
-    return datos
-
-
-def datos_necesarios_perfil(perfil: dict) -> None:  # NECESITO INFORMACION DE YOUTUBE
-    """
-    Pre: Recibe un diccionario solo con el nombre del perfil.
-    Post: Le agrega datos, como por ejemplo id, playlists, al diccionario recibido.
-    """
-    # Spotify:
-    refresh_token = obtener_refresh_token_perfil(perfil["username"])
-    if refresh_token:
-        print("Consiguiendo datos de Spotify...")
-        token = tk.refresh_user_token(ID_CLIENTE, CLIENTE_SECRETO, refresh_token)
-        spotify = tk.Spotify(token)
-        perfil["spotify"] = spotify
-    if "spotify" in perfil:
-        id_usuario = spotify.current_user().id
-        perfil["id_usuario_spotify"] = id_usuario
-    if "spotify" in perfil and "id_usuario_spotify" in perfil:
-        datos_playlists: list = conseguir_datos_playlistsSpotify(perfil["spotify"], perfil["id_usuario_spotify"])
-        perfil["playlists_spotify"] = datos_playlists
-
-    # Youtube:
-    print("Consiguiendo datos de Youtube...")
-    youtube = validar_permisosYT(perfil["username"])
-    perfil["youtube"] = youtube
-    if "youtube" in perfil:
-        request = youtube.channels().list(
-            part="id",
-            mine=True
-        )
-        response = request.execute()["items"]  # Devuelve una lista con la información del canal.
-        id_YT: str = response[0]["id"]
-        perfil["id_usuario_youtube"] = id_YT
-    if "youtube" in perfil and "id_usuario_youtube" in perfil:
-        datos_playlists: list = conseguir_datos_playlistsYT(perfil["youtube"])
-        perfil["playlists_youtube"] = datos_playlists
-
-
-def datos_agregados_correctamente(usuario_actual: dict) -> bool:
-    """
-    Pre: Recibe un diccionario con los datos del perfil actual.
-    Post: Devuelve un False si encuentra que falta un dato importante.
-    """
-    if not usuario_actual["username"]:
-        return False
-    datos_necesarios_perfil(usuario_actual)
-    if "spotify" not in usuario_actual:
-        return False
-    elif "id_usuario_spotify" not in usuario_actual:
-        return False
-    elif "playlists_spotify" not in usuario_actual:
-        return False
-    elif "youtube" not in usuario_actual:
-        return False
-    elif "id_usuario_youtube" not in usuario_actual:
-        return False
-    elif "playlists_youtube" not in usuario_actual:
-        return False
-    return True
-
+    credenciales: dict = {}
+    if os.path.isfile("datos_perfiles.json"):
+        datos: dict = perf.sacar_info_json("datos_perfiles.json")
+        credenciales: dict = datos[nombre]["youtube"]
+    return credenciales
 
 #### ----------------------------- AUTENTICACIÓN YOUTUBE ------------------------------------------
 ###################################################################################################
 
-def validar_permisosYT(usuario: str) -> object:
-    datos: dict = sacar_info_json("datos_perfiles_YT.json")
-
-    # Me guardo las claves que generó el usuario del perfil para YouTube.
-    claves: dict = datos[usuario]["youtube"]
-
-    # Recupero los permisos.
-    permisos = google.oauth2.credentials.Credentials(
-        token=claves["token"], refresh_token=claves["refresh_token"],
-        token_uri=claves["token_uri"], client_id=claves["client_id"],
-        client_secret=claves["client_secret"], scopes=claves["scopes"]
-    )
-
-    # Verifico si son válidos.
-    if (permisos.expired == False):
-        # Solicito nuevos permisos y refresco los existentes.
-        solicitar = google.auth.transport.requests.Request()
-        permisos.refresh(solicitar)
-
-        # Los guardo en el archivo de credenciales de perfiles.
-        datos[usuario]["youtube"] = json.loads(permisos.to_json())
-        escribir_json(datos, "datos_perfiles_YT.json")
-
-        # Genero un nuevo cliente de YouTube.
-        api_service_name: str = "youtube"
-        api_version: str = "v3"
-        youtube: object = googleapiclient.discovery.build(
-            api_service_name, api_version, credentials=permisos
-        )
-
-        return youtube
-    else:
-        return youtube
-
-
-def guardar_youtube_en_json(usuario: str, permisos) -> None:
-    """Guarda los datos recibidos en un archivo json (si no existe, se crea aqui)."""
-    datos_existentes: dict = {}
-    dicc: dict = {usuario: {"youtube": json.loads(permisos.to_json())}}
-    if os.path.isfile("datos_perfiles_YT.json"):
-        datos_existentes: dict = sacar_info_json("datos_perfiles_YT.json")
-    datos_existentes.update(dicc)
-    escribir_json(datos_existentes, "datos_perfiles_YT.json")
-
-
-def autenticarYT() -> object:  # REVISAR, DEVUELVE STRING CUANDO FALLA
-    permisos = ""
-    scopes = ["https://www.googleapis.com/auth/youtube"]
-
-    # Verificación HTTPS OAuthlib activada.
-    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
-    api_service_name: str = "youtube"
-    api_version: str = "v3"
-    client_secrets_file: str = "credenciales_YT.json"
-
-    # Autorización.
-    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        client_secrets_file, scopes
-    )
-    try:
-        permisos = flow.run_console()
-    except:
-        print(vis.ERROR_URL)
-    else:
-        # Creo un cliente API para hacer solicitudes.
-        clienteYT: object = googleapiclient.discovery.build(
-            api_service_name, api_version, credentials=permisos
-        )
-    return permisos
-
-
-def id_canal_youtube(youtube: object) -> None:
+def id_canal_youtube(youtube:object) -> None:
+    """ Retorna el identificador de un canal de Youtube (ID) """
     request = youtube.channels().list(
-        part="id",
-        mine=True
-    )
-    response = request.execute()["items"]  # Devuelve una lista con la información del canal.
+            part= "id",
+            mine= True
+            )
+    response = request.execute()["items"] #Devuelve una lista con la información del canal.
     id_YT: str = response[0]["id"]
     return id_YT
-
-
-####################################################################################################
-####################################################################################################
-
-def elegir_perfil(perfil: dict) -> str:
-    """
-    Pre: Recibe un diccionario con los datos del perfil actual.
-    Post: Se le imprime un lista de perfiles y devuelve un string con el perfil elegido.
-          Si no eligio, no hubo perfiles para elegir o si eligio el perfil actual entonces devuelve un string vacio.
-    """
-    perfil_elegido: str = ""
-    nombres_perfiles: list = nombres_perfiles_guardados()
-    nombres_perfiles.append("NO ELEGIR PERFIL")
-    if len(nombres_perfiles) == 1:
-        print(vis.NO_PERFILES)
-        return perfil_elegido
-    vis.visual_lista_elementos(nombres_perfiles, "Perfiles Guardados", True)
-    # numeros_permitidos: list = [x for x in range(1,len(nombres_perfiles)+1)]
-    opcion = input_num_con_control(1, len(nombres_perfiles))
-    if opcion == len(nombres_perfiles):
-        return perfil_elegido
-    if perfil["username"] and perfil["username"] == nombres_perfiles[
-        opcion - 1]:  # CUANDO VUELVE A ELEGIR PERFIL, PARA QUE NO ELIJA EL MISMO
-        return perfil_elegido
-    perfil_elegido: str = nombres_perfiles[opcion - 1]
-    return perfil_elegido
-
-
-def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
-    """
-    Genera un menu para crear y guardar perfiles junto con la opcion de elegir uno de los perfiles guardados.
-    Si eligio un perfil entonces el nombre se guardara en el diccionario recibido.
-    """
-    terminar: bool = False
-    while not terminar:
-        vis.menu_perfiles(perfil["username"])
-        opcion = input_num_con_control(1, 3)
-        if opcion == 1:
-            perfil_elegido: str = elegir_perfil(perfil)  # EN REVISION
-            if perfil_elegido:
-                if perfil["username"]: perfil.clear()
-                perfil["username"] = perfil_elegido
-        elif opcion == 2:
-            nuevo_perfil(credenciales_SP)
-        else:
-            terminar: bool = True
-
-def estan_archivos():
-    """Devuelve True si encuentra los 2 archivos donde estan las credenciales que necesitamos, caso contrario devuelve False."""
-    if not os.path.isfile("credenciales_YT.json"):
-        vis.falta_archivo("YT")
-        return False
-    elif not os.path.isfile("credenciales_SP.json"):
-        vis.falta_archivo("SP")
-        return False
-    return True
-
-
-def conseguir_credenciales_spotify() -> tuple:
-    with open("credenciales_SP.json") as f:
-        datos = json.load(f)
-    return tuple(datos.values())
-
 
 ####################################################################################################
 ####################################################################################################
 
 def main() -> None:
-    if estan_archivos():
+    if os.path.isfile("credenciales.json"):
         vis.inicio()
-        credenciales_spotify: tuple = conseguir_credenciales_spotify()
         usuario_actual: dict = {"username": ""}
-        manejo_perfiles(usuario_actual, credenciales_spotify)
+        perf.manejo_perfiles(usuario_actual)
         terminar: bool = True
-        if datos_agregados_correctamente(usuario_actual, credenciales_spotify):
+        if perf.datos_agregados_correctamente(usuario_actual):
             terminar: bool = False
-        # print(usuario_actual)
+        """
+        datos_SP = datos_playlists_SP(usuario_actual["spotify"], usuario_actual["id_usuario_spotify"])
+        print(datos_SP)
+        datos_YT = datos_playlists_YT(usuario_actual["youtube"])
+        print(datos_YT)
+        """
         while not terminar:
             print(vis.MENU)
-            seleccion = input_num_con_control(0, 7)
+            seleccion: int = input_num_con_control(0, 7)
             if seleccion == 1:
-                # Listar las playlist
+                #Listar las playlist
                 playlist_segun_servidor(usuario_actual)
+                input(" Presione Enter para volver al menu principal: ")
             elif seleccion == 2:
-                # Exportar analisis de playlist a CSV
+                #Exportar analisis de playlist a CSV
                 analisis_de_playlist(usuario_actual)
             elif seleccion == 3:
                 # Crear playlist
-                crear_playlist(usuario_actual['id_usuario_spotify'], usuario_actual['spotify'],
-                               usuario_actual['token_youtube'])
+                crear_playlist(usuario_actual, usuario_actual['youtube'])
             elif seleccion == 4:
-                # Buscar y administrar canción
+                #Buscar y administrar canción
                 administracion_de_canciones(usuario_actual)
             elif seleccion == 5:
-                # Sincronizar playlists
+                #Sincronizar playlists
                 spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'],
-                                   usuario_actual['id_usuario_spotify'], usuario_actual['id_usuario_youtube'])
+                                usuario_actual['id_usuario_spotify'], usuario_actual['id_usuario_youtube'])
             elif seleccion == 6:
-                # Generar wordcloud
-                wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['token_youtube'])
+                #Generar wordcloud
+                wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'])
             elif seleccion == 7:
-                # Cambiar de perfil
-                manejo_perfiles(usuario_actual)
-                if not datos_agregados_correctamente(usuario_actual, credenciales_spotify):
-                    terminar: bool = True
+                #Cambiar de perfil
+                perf.manejo_perfiles(usuario_actual)
+                if "spotify" not in usuario_actual:    # Si no esta entonces el usuario cambio.
+                    if not perf.datos_agregados_correctamente(usuario_actual):
+                        terminar: bool = True
             else:
                 terminar: bool = True
-
+    else:
+        vis.falta_archivo()
+    
 main()
