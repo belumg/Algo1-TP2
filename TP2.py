@@ -18,9 +18,8 @@ def input_num_con_control(min:int, max:int) -> int:
     #Recibo el rango de opciones para un menu numerico
     #Devuelve una opción en ese rango como int
     seleccion = input("      >>>    ")
-    while not seleccion.isnumeric() or int(seleccion)>max or int(seleccion)<min:
+    while not seleccion.isnumeric() or int(seleccion) > max or int(seleccion) < min:
         seleccion = input("Inválido. Vuelva a ingresar >>> ")
-
     seleccion = int(seleccion)
     return seleccion
 
@@ -220,10 +219,10 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
     opcion2: int = int(opcion2)
     if opcion2 == 1:
         # crear lista de youtube
-        nombre = crear_playlist_youtube(token_yutub)
-        playlist_id: str = ""
+        nombre, playlist_id = crear_playlist_youtube(token_yutub)
+        #playlist_id: str = ""
         # se obtiene el id
-        playlist_id = dame_id_playlist(spotify, token_yutub, user_id_yutub, nombre, "youtube")
+        #playlist_id = dame_id_playlist(spotify, token_yutub, user_id_yutub, nombre, "youtube")
         # la lista de canciones es nula
         lista_yutub: list = []
     else:
@@ -293,9 +292,9 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
         # creo la playlist de spotify
         # la lista de canciones es nula
         lista_spotifai: list = []
-        nombre: str = crear_playlist_spotify(user_id_spotifai, spotify)
+        nombre, playlist_id = crear_playlist_spotify(usuario_actual)
         # como recibo la informacion de la playlist que elegí, necesito id
-        playlist_id = dame_id_playlist(spotify, token_yutub, user_id_spotifai, nombre, 'spotify')
+        # playlist_id = dame_id_playlist(spotify, token_yutub, user_id_spotifai, nombre, 'spotify')
     elif opcion2 == 2:
         # uso una de las de ahí
         lista_spotifai: list = []
@@ -418,7 +417,7 @@ def mostrame_esta_imagen(usuario: str, id_playlist: str) -> None:
 ### ----------------------- CREAR PLAYLISTS -------------------------------------------------------
 ###################################################################################################
 
-def crear_playlist_spotify(user_id: str, spotify: object) -> str:
+def crear_playlist_spotify(usuario_actual: dict) -> tuple:
     # acá se crean las listas y devuelve el nombre que se le dio para buscar más tarde el id
     nombre: str = input("Indique el nombre para la playlist de Spotify: ")
     publica: str = input("Indique si desea que sea publica (s/n): ")
@@ -427,29 +426,24 @@ def crear_playlist_spotify(user_id: str, spotify: object) -> str:
     else:
         public: bool = False
     descripcion: str = input("Indique una descripción: ")
-    spotify.playlist_create(user_id, nombre, public, descripcion)
-    return nombre
+    datos_playlist = usuario_actual["spotify"].playlist_create(usuario_actual["id_usuario_spotify"], nombre, public, descripcion)       # ES MUY LARGO
+    datos_ordenados_playlist: dict = perf.ordenar_datos_playlist_SP(datos_playlist)
+    usuario_actual["playlists_spotify"].append(datos_ordenados_playlist)
+    print(vis.PLAYLIST_CREADA)
+    return nombre, datos_playlist.id
 
 
-def crear_playlist_youtube(token_yutub: object) -> str:
+def crear_playlist_youtube(youtube: object) -> tuple:
     # acá lo mismo pero para youtube
-    youtube = token_yutub
     nombre: str = input("Indicame el nombre bebe: ")
     descripcion: str = input("La descripcion please: ")
-    privaciti: str = input("Privado (p) o no privado (n), esa es la cuestion: ")
-    i: int = 0
-    while privaciti != "p" and privaciti != "n":
-        i = i + 1
-        if i == 2:
-            print("Mire que no tenemos todo el dia.")
-            # espero que le salga este print porque me pareció divertido
-            # es cuando lo intenta dos veces
-        privaciti = input("Por favor escriba correctamente: ")
-    if privaciti in "pP":
-        privaciti = 'private'
+    eleccion_privacidad: str = perf.input_con_control(["p", "n"], "Privado (p) o No privado (n), esa es la cuestion: ",
+                                                      2, "Mire que no tenemos todo el dia.")
+    if eleccion_privacidad == "p":
+        privaciti: str = 'private'
     else:
-        privaciti = 'public'
-    playlists_insert_response = youtube.playlists().insert(
+        privaciti: str = 'public'
+    nueva_playlist: dict = youtube.playlists().insert(
         part="snippet,status",
         body=dict(
             snippet=dict(
@@ -461,23 +455,21 @@ def crear_playlist_youtube(token_yutub: object) -> str:
             )
         )
     ).execute()
-    return nombre
+    print(vis.PLAYLIST_CREADA)
+    return nombre, nueva_playlist["id"]
 
 
-def crear_playlist(user_id: str, spotify: object, token_youtube: object) -> None:
+def crear_playlist(usuario_actual: dict, token_youtube: object) -> None:
     # la función en si para que el usuario elija en que plataforma crearlo
-    print("Usted decidio crear playlist, elija el servidor \n"
-          "(1) Spotify\n"
-          "(2) Youtube")
-    opcion: str = input(">>> ")
-    while opcion!="1" and opcion!="2":
-        opcion = input("Solo le estoy pidiendo que ingrese numeros, no me haga enojar: ")
-    opcion: int = int(opcion)
+    vis.youtube_spotify()
+    opcion: int = input_num_con_control(1, 3)
     if opcion == 1:
-        crear_playlist_spotify(user_id, spotify)
-    else:
         crear_playlist_youtube(token_youtube)
-
+    elif opcion == 2:
+        crear_playlist_spotify(usuario_actual)
+    else:
+        print(" Volviendo al menu...")
+        
 ### ----------------------------- ANALISIS DE PLAYLISTS -------------------------------------------
 ###################################################################################################
 
@@ -488,7 +480,7 @@ def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
     #Muestra por pantalla una lista ordenada de los nombres de las playlists de ese servidor
     lista_nombres: list = list()
     if (len(usuario_actual[f'playlists_{servidor}']) == 0):
-        print(vis.NO_PLAYLIST)
+        vis.no_playlist(servidor)
     else:
         for playlist in usuario_actual[f'playlists_{servidor}']:
             lista_nombres.append(playlist['name'])
@@ -498,7 +490,7 @@ def playlist_segun_servidor(usuario_actual: dict) -> str:
     #Recibe la información de usuario
     #Devuelve el nombre del servidor en el que elige trabajar el usuario
     vis.youtube_spotify(mostar_ambas=True)
-    seleccion = input_num_con_control(1,3)
+    seleccion: int = input_num_con_control(1,3)
     if seleccion == 1:
         print_playlists_de_user(usuario_actual, "youtube")
         servidor: str = "youtube"
@@ -531,32 +523,21 @@ def comprobar_permisos(usuario_actual:dict, servidor:str, seleccion:int) -> bool
     return permitido
 
 
-def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, permisos:bool = False) -> None:
+def seleccionar_playlist(usuario_actual: dict, mi_playlist: dict, servidor: str, permisos: bool = False) -> None:
     #Recibe datos de usuario, mi_playlist como dict vacio, el servidor y True si va a hacer
     # cambios a la lista
     # Devuelve mi_playlist con servidor, nombre y id de playlist
-
-    permitido : bool = False
+    permitido: bool = False
     print("Seleccione una playlist ")
-    seleccion = input("    >>> ")
-    while not seleccion.isnumeric() or int(seleccion)<1:
-        seleccion = input("Inválido. Vuelva a ingresar >>> ")
-    seleccion = int(seleccion)
-
-    if servidor == "spotify" and seleccion>len(usuario_actual['playlists_spotify']):
-        print("Número de playlist ingresado inválido.")
-    elif servidor == "youtube" and seleccion>len(usuario_actual['playlists_youtube']):
-        print("Número de playlist ingresado inválido.")
-    else:
+    seleccion: int = input_num_con_control(1, len(usuario_actual[f"playlists_{servidor}"]))
+    permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
+    while servidor == "spotify" and permisos and not permitido:
+        print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
+        seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
         permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-        while servidor == "spotify" and permisos and not permitido:
-            print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
-            seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
-            permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-
-        mi_playlist['servidor'] = servidor
-        mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
-        mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id']
+    mi_playlist['servidor'] = servidor
+    mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
+    mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id']
 
 
 def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
@@ -669,10 +650,10 @@ def analizar_track(track:dict, atributos_track:dict, spotify:object, atributos:l
             atributos_track[atrib] = getattr(analisis, atrib)
 
 
-def analisis_de_playlist(usuario_actual:dict) -> None:
+def analisis_de_playlist(usuario_actual: dict) -> None:
     #Recibe los datos del usuario y selecciona una playlist de una lista para analizar
     #Llama a las funciones necesarias para el analisis
-    mi_playlist:dict=dict()
+    mi_playlist: dict = dict()
 
     # atributos_playlist:dict:
     #     {
@@ -683,11 +664,22 @@ def analisis_de_playlist(usuario_actual:dict) -> None:
     #     atributo2: int,
     #     ...
     # }
-    servidor:str = playlist_segun_servidor(usuario_actual)
+    servidor: str = playlist_segun_servidor(usuario_actual)
     if servidor == "unknown":
-        servidor = seleccion_servidor()
-    seleccionar_playlist(usuario_actual, mi_playlist, servidor) 
-    realizar_analisis_playlist (usuario_actual, mi_playlist)
+        servidor: str = seleccion_servidor()
+    if servidor == "spotify" and not usuario_actual["playlists_spotify"]:
+        print("Debido a que Spotify no tiene playlists no podemos realizar esta accion.")       # O poner otro mensaje
+        input("Presione Enter para continuar: ")
+    else:
+        seleccionar_playlist(usuario_actual, mi_playlist, servidor)
+        if servidor == "spotify":
+            datos_tracks: dict = usuario_actual["spotify"].playlist_items(mi_playlist["id"], "items(track(name, id))")
+            if not datos_tracks["items"]:
+                print("La playlist elegida esta vacia, no pudimos realizar un analisis.")
+            else:
+                realizar_analisis_playlist (usuario_actual, mi_playlist)                    # NO SE QUE HICE, ARREGLAR ESTO.
+        else:
+            realizar_analisis_playlist (usuario_actual, mi_playlist)
 
 
 def realizar_analisis_playlist (usuario_actual:dict, mi_playlist:dict) -> None:
@@ -695,7 +687,7 @@ def realizar_analisis_playlist (usuario_actual:dict, mi_playlist:dict) -> None:
     #Guarda un csv con los atributos promediados
     atributos_playlist:dict={}
     atributos_track: dict = {}
-    detalles_playlist: dict=dict()
+    detalles_playlist: dict = dict()
     fecha = date.today()
 
     atributos: list = [
@@ -755,9 +747,9 @@ def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
 
 def seleccion_servidor() -> str:
     #Devuelve un str del servidor elegido por el user entre las opciones disponibles
-    servidor = input("Ingrese el servidor en el que desea buscar: ").lower()
+    servidor: str = input("Ingrese el servidor en el que desea buscar: ").lower()
     while not servidor == "spotify" and not servidor == "youtube":
-        servidor = input("Servidor inválido, vuelva a ingresar >>> ").lower()
+        servidor: str = input("Servidor inválido, vuelva a ingresar >>> ").lower()
     return servidor
 
 
@@ -1045,7 +1037,7 @@ def playlists_spotify(spotify, id_usuario) -> None:
     if nombres:
         vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
     else:
-        print(vis.NO_PLAYLIST)
+        vis.no_playlist("spotify")
 
 
 def listar_playlistsYT(youtube: object) -> dict:
@@ -1135,13 +1127,13 @@ def main() -> None:
             if seleccion == 1:
                 #Listar las playlist
                 playlist_segun_servidor(usuario_actual)
+                input(" Presione Enter para volver al menu principal: ")
             elif seleccion == 2:
                 #Exportar analisis de playlist a CSV
                 analisis_de_playlist(usuario_actual)
             elif seleccion == 3:
                 # Crear playlist
-                crear_playlist(usuario_actual['id_usuario_spotify'], usuario_actual['spotify'],
-                            usuario_actual['youtube'])
+                crear_playlist(usuario_actual, usuario_actual['youtube'])
             elif seleccion == 4:
                 #Buscar y administrar canción
                 administracion_de_canciones(usuario_actual)
