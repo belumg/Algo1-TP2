@@ -345,15 +345,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:
     if "spotify" in perfil:
         id_usuario: list = probando(spotify.current_user)
         if id_usuario:
-            perfil["id_usuario_spotify"] = id_usuario[0].id
-            """
-    if "spotify" in perfil and "id_usuario_spotify" in perfil:
-        datos_playlists: list = datos_playlists_SP(perfil["spotify"], perfil["id_usuario_spotify"])
-        if datos_playlists and datos_playlists[0] != "SIN PLAYLISTS":
-            perfil["playlists_spotify"] = datos_playlists
-        elif datos_playlists and datos_playlists[0] == "SIN PLAYLISTS":
-            perfil["playlists_spotify"] = []
-    """     
+            perfil["id_usuario_spotify"] = id_usuario[0].id 
         # Youtube:
         print("Consiguiendo datos de Youtube...")
         youtube = validar_permisosYT(perfil["username"])    # Falta typing
@@ -366,11 +358,6 @@ def datos_necesarios_perfil(perfil: dict) -> None:
             response: list = request.execute()["items"] # Devuelve una lista con la información del canal.
             id_YT: str = response[0]["id"]
             perfil["id_usuario_youtube"] = id_YT
-    """  
-        if "youtube" in perfil and "id_usuario_youtube" in perfil:
-            datos_playlists: list = listar_playlistsYT(perfil["youtube"])
-            perfil["playlists_youtube"] = datos_playlists
-    """  
 
 ####################################################################################################
 ####################################################################################################
