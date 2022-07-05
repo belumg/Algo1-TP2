@@ -225,9 +225,6 @@ def validar_permisosYT(usuario: str, youtube: object) -> object:
         client_secret=claves["client_secret"], scopes=claves["scopes"]
     )
 
-    api_service_name: str = "youtube"
-    api_version: str = "v3"
-
     # Verifico si son válidos.
     if (permisos.expired == False):
         # Solicito nuevos permisos y refresco los existentes.
