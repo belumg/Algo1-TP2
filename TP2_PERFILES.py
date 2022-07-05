@@ -210,8 +210,8 @@ def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
 ######################### YOUTUBE: VALIDACION DE PERMISOS ##########################################
 ####################################################################################################
 
-def validar_permisosYT(usuario: str) -> object:
-    """ Corrobora que las credenciales para hacer solicitdudes a la API estén vigente.
+def validar_permisosYT(usuario: str, youtube: object) -> object:
+    """ Corrobora que las credenciales para hacer solicitdudes a la API estén vigentes.
     En caso de que no lo estén, solicita nuevas y genera un nuevo cliente. """
     datos: dict = sacar_info_json("datos_perfiles.json")
 
@@ -225,6 +225,9 @@ def validar_permisosYT(usuario: str) -> object:
         client_secret=claves["client_secret"], scopes=claves["scopes"]
     )
 
+    api_service_name: str = "youtube"
+    api_version: str = "v3"
+
     # Verifico si son válidos.
     if (permisos.expired == False):
         # Solicito nuevos permisos y refresco los existentes.
@@ -235,14 +238,12 @@ def validar_permisosYT(usuario: str) -> object:
         datos[usuario]["youtube"] = json.loads(permisos.to_json())
         escribir_json(datos, "datos_perfiles.json")
 
-        # Genero un nuevo cliente de YouTube.
-        api_service_name: str = "youtube"
-        api_version: str = "v3"
-        youtube: object = build(api_service_name, api_version, credentials=permisos)
+    # Genero un cliente de Youtube con los permisos correspondientes.
+    api_service_name: str = "youtube"
+    api_version: str = "v3"
+    youtube = build(api_service_name, api_version, credentials=permisos)
 
-        return youtube
-    else:
-        return youtube
+    return youtube
 
 ######################### OBTENCION DE DATOS #######################################################
 ####################################################################################################
