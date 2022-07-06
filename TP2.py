@@ -543,13 +543,15 @@ def comprobar_permisos(usuario_actual:dict, servidor:str, seleccion:int) -> bool
     #Será true si es colaborativa o propiedad del usuario
     permitido: bool = False
 
+    plataforma: object = usuario_actual[servidor]
     if servidor == "spotify":
-        id : str= usuario_actual["playlists_spotify"][seleccion - 1]['id']
-        if usuario_actual["playlists_spotify"][seleccion - 1]['collaborative']:
+        playlists: list = perf.datos_playlists_SP(plataforma, usuario_actual["id_usuario_spotify"])
+        id : str= playlists[seleccion - 1]['id']
+        if playlists[seleccion - 1]['collaborative']:
             permitido = True
         else:
-            spotify = usuario_actual['spotify']
-            owner_playlist = spotify.playlist(id).owner
+            #spotify = usuario_actual['spotify']
+            owner_playlist = plataforma.playlist(id).owner
             if owner_playlist.id == usuario_actual['id_usuario_spotify']:
                 permitido = True
     return permitido
