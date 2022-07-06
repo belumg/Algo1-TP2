@@ -496,12 +496,27 @@ def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
     #Recibe la informacion de usuario y un servidor
     #Muestra por pantalla una lista ordenada de los nombres de las playlists de ese servidor
     lista_nombres: list = list()
-    if (len(usuario_actual[f'playlists_{servidor}']) == 0):
+    plataforma: object = usuario_actual[servidor]
+    if (servidor == "youtube"):
+        playlists: list = conseguir_datos_playlistsYT(plataforma)
+    elif (servidor == "spotify"):
+        playlists: list = perf.datos_playlists_SP(plataforma, usuario_actual["id_usuario_youtube"])
+
+    """ if (len(usuario_actual[f'playlists_{servidor}']) == 0):
         lista_nombres.append("No hay ninguna lista para mostrar")
     else:
         for playlist in usuario_actual[f'playlists_{servidor}']:
             lista_nombres.append(playlist['name'])
+        vis.visual_lista_elementos(lista_nombres, f"Playlists de {servidor}", True) """
+    
+    if (len(playlists) == 0):
+        lista_nombres.append("No hay ninguna lista para mostrar")
+    else:
+        for lista_reproduccion in playlists:
+            lista_nombres.append(lista_reproduccion["name"])
         vis.visual_lista_elementos(lista_nombres, f"Playlists de {servidor}", True)
+
+
 
 def playlist_segun_servidor(usuario_actual: dict) -> str:
     #Recibe la información de usuario
