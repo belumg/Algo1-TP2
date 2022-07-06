@@ -157,31 +157,6 @@ def spotify_vs_youtube(usuario_actual: dict):
     else:
         print("HABEMUS UN GANADOR, USTED PASO TODAS SUS CANCIONES CORRECTAMENTE")
 
-
-def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombre: str, servicio: str)->str:
-    # cuando se crea playlist y no se sabe el id de la cancion
-
-    playlist_id: str =""
-    if servicio=="spotify":
-        # se busca en las playlist cual tiene el mismo nombre y se da el id
-        playlist = spotify.playlists(user_id, limit=50)
-        for i in range(len(playlist.items)):
-            if playlist.items[i].name == nombre:
-                playlist_id = playlist.items[i].id
-
-    elif servicio=="youtube":
-        youtube=token_youtube
-        request = youtube.playlists().list(
-            part="id, snippet",
-            mine=True
-        )
-        response = request.execute()
-        print(response)
-        for i in response['items']:
-            if i['snippet']['title'] == nombre:
-                playlist_id = i['id']
-    return playlist_id
-
 ### ----------------------- SINCRONIZACIÓN SPOTIFY A YOUTUBE --------------------------------------
 ###################################################################################################
 
@@ -201,7 +176,6 @@ def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
         lista_no_encontrados.append([nombre, artista])
         id_elejido = "no habemus nada"
     return id_elejido
-
 
 
 def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
@@ -224,11 +198,9 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
     opcion2: int = int(opcion2)
     if opcion2 == 1:
         # crear lista de youtube
-        nombre = crear_playlist_youtube(youtube)
-        playlist_id: str = ""
+        nombre, playlist_id = crear_playlist_youtube(youtube)
         # se obtiene el id
         user_id_yutub = usuario_actual['id_usuario_youtube']
-        playlist_id = dame_id_playlist(spotify, youtube, user_id_yutub, nombre, "youtube")
         # la lista de canciones es nula
         lista_yutub: list = []
     else:
@@ -278,7 +250,7 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
         if lista_encontrados[i][2] in nombre or lista_encontrados[i][2] in artista:
             urisueltos.append(lista_encontrados[i][0])
     if len(urisueltos) != 0:
-        uris.append(urisueltos[0])
+        uris.append(urisueltos[0])   
     for j in range(len(uris)):
         agrego: bool = False
         for k in range(len(lista_encontrados)):
@@ -286,7 +258,6 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
                 agrego = True
     if agrego == False:
         lista_no_encontrados.append([nombre, artista])
-
 
 
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
@@ -316,9 +287,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
         # creo la playlist de spotify
         # la lista de canciones es nula
         lista_spotifai: list = []
-        nombre: str = crear_playlist_spotify(user_id_spotifai, spotify)
-        # como recibo la informacion de la playlist que elegí, necesito id
-        playlist_id = dame_id_playlist(spotify, youtube, user_id_spotifai, nombre, 'spotify')
+        nombre, playlist_id = crear_playlist_spotify(user_id_spotifai, spotify)
     elif opcion2 == 2:
         # uso una de las de ahí
         lista_spotifai: list = []
@@ -444,23 +413,24 @@ def mostrame_esta_imagen(usuario: str, id_playlist: str) -> None:
 
 def crear_playlist_spotify(user_id: str, spotify: object) -> str:
     # acá se crean las listas y devuelve el nombre que se le dio para buscar más tarde el id
-    nombre: str = input("indique el nombre para la playlist en spotify")
-    publica: str = input("indique si desea que sea publica (s/n)")
-    if publica in "sS":
+    nombre: str = input("Indique el nombre para la playlist de Spotify: ")
+    publica: str = perf.input_con_control(["si", "no"], "Indique si desea que sea publica (si/no) ")
+    if publica == "si":
         public: bool = True
     else:
         public: bool = False
-    descripcion: str = input("indique descripción: ")
-    spotify.playlist_create(user_id, nombre, public, descripcion)
-    return nombre
+    descripcion: str = input("Indique una descripción: ")
+    datos_playlist: tk.model.FullPlaylist = spotify.playlist_create(user_id, nombre, public, descripcion)
+    print(vis.PLAYLIST_CREADA)
+    return nombre, datos_playlist.id
 
 
 def crear_playlist_youtube(token_yutub: object) -> str:
     # acá lo mismo pero para youtube
     youtube = token_yutub
     nombre: str = input("Indicame el nombre bebe: ")
-    descripcion: str = input("La descripcion please")
-    privaciti: str = input("Privado (p) o no privado (n) esa es la cuestion")
+    descripcion: str = input("La descripcion please: ")
+    privaciti: str = input("Privado (p) o no privado (n) esa es la cuestion: ")
     i: int = 0
     while privaciti != "p" and privaciti != "n":
         i = i + 1
@@ -473,7 +443,7 @@ def crear_playlist_youtube(token_yutub: object) -> str:
         privaciti = 'private'
     else:
         privaciti = 'public'
-    playlists_insert_response = youtube.playlists().insert(
+    nueva_playlist: dict = youtube.playlists().insert(
         part="snippet,status",
         body=dict(
             snippet=dict(
@@ -485,24 +455,21 @@ def crear_playlist_youtube(token_yutub: object) -> str:
             )
         )
     ).execute()
-    return nombre
+    print(vis.PLAYLIST_CREADA)
+    return nombre, nueva_playlist["id"]
 
 
-def crear_playlist(user_id: str, spotify: object, token_youtube: object)->None:
-    # la función en si para que el usuario elija en que plataforma crearlo
-    print("Usted decidio crear playlist, elija el servidor \n"
-          "(1) Spotify\n"
-          "(2) Youtube")
-    opcion: str = input(">>> ")
-    while opcion!="1" and opcion!="2":
-        opcion = input("Solo le estoy pidiendo que ingrese numeros no me haga enojar")
-    opcion: int = int(opcion)
+def crear_playlist(user_id: str, spotify: object, token_youtube: object) -> None:
+    """Una vez que elijas una plataforma, te lleva a la funcion necesaria para crearla."""
+    vis.youtube_spotify()
+    opcion: int = input_num_con_control(1, 3)
     if opcion == 1:
+        crear_playlist_youtube(token_youtube)
+    elif opcion == 2:
         crear_playlist_spotify(user_id, spotify)
     else:
-        crear_playlist_youtube(token_youtube)
-
-
+        print("Volviendo al menu...")
+        
 ### ----------------------------- ANALISIS DE PLAYLISTS -------------------------------------------
 ###################################################################################################
 
