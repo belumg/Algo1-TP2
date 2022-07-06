@@ -36,6 +36,38 @@ def input_con_control(palabras_permitidas: list, mensaje: str, cansancio: int = 
         intentos += 1
     return seleccion
 
+####################################################################################################
+####################################################################################################
+
+def probando(funcion_a_probar, datos_que_necesita: list = []) -> list:
+    """
+    Pre: Recibe una funcion junto con una lista de sus argumentos.
+    Post: Devuelve una lista vacia si el usuario dejo de intentar que su funcion, bueno, funcionara.
+          Caso contrario, devuelve una lista de un elemento con el dato buscado. 
+    """
+    terminar: bool = False
+    dato: list = []
+    while not terminar:
+        try:
+            if datos_que_necesita:
+                dato_buscado = funcion_a_probar(*datos_que_necesita)
+            else:
+                dato_buscado = funcion_a_probar()
+        except tk.Forbidden:
+            print("[ERROR] --> A tu cuenta de Spotify no le dieron permisos para acceder a esta aplicacion.")
+            print(" Hablalo con el desarrollador")
+            terminar: bool = True
+        except:
+            print(vis.NO_INTERNET)
+            print(" Necesitamos internet para acceder a los datos de su perfil.")
+            intentar: str = input_con_control(["si", "no"], "Desea intentarlo de nuevo(si/no)?  ", 10, "Esta costando mucho.")
+            if intentar == "no":
+                terminar: bool = True
+        else:
+            dato.append(dato_buscado)
+            terminar: bool = True
+    return dato
+
 ######################### AUTENTICAR SPOTIFY #######################################################
 ####################################################################################################
 
@@ -63,9 +95,8 @@ def autenticar_spotify() -> str:
 ######################### AUTENTICAR YOUTUBE #######################################################
 ####################################################################################################
 
-def autenticarYT() -> object:  # ERROR: Puede devolver un string o un objeto.
+def autenticarYT() -> list:
     """ Autentica a un determinado usuario en la plataforma Youtube """
-    permisos = ""
     scopes = ["https://www.googleapis.com/auth/youtube"]
 
     # Verificación HTTPS OAuthlib activada.
@@ -76,13 +107,10 @@ def autenticarYT() -> object:  # ERROR: Puede devolver un string o un objeto.
     credenciales_YT: dict = sacar_info_json("credenciales.json")["youtube"] 
     # Autorización.
     flow = InstalledAppFlow.from_client_config(credenciales_YT, scopes)
-    try:
-        permisos = flow.run_console()
-    except:
-        print(vis.ERROR_URL)
-    else:
+    permisos: list = probando(flow.run_console)
+    if permisos:
         # Creo un cliente API para hacer solicitudes.
-        clienteYT: object = build(api_service_name, api_version, credentials=permisos)
+        clienteYT: object = build(api_service_name, api_version, credentials=permisos[0])
     return permisos
 
 ######################### GUARDAR INFORMACION EN JSON ##############################################
@@ -138,7 +166,7 @@ def nuevo_perfil() -> None:
         vis.youtube_spotify(True, opciones_elegidas)
         opcion: int = input_num_con_control(1,3)
         if opcion == 1:
-            obj_youtube = autenticarYT()  # Falta typing
+            obj_youtube: list = autenticarYT()
             if obj_youtube:
                 opciones_elegidas.append(opcion)
         elif opcion == 2:
@@ -150,7 +178,7 @@ def nuevo_perfil() -> None:
             else: falta: str = "Spotify"
             vis.falta_plataforma(falta)
         elif opcion == 3 and opciones_elegidas:
-            guardar_datos_en_json(nombre, refresh_token, obj_youtube)
+            guardar_datos_en_json(nombre, refresh_token, obj_youtube[0])
             print(vis.DATOS_GUARDADOS)
             terminar: bool = True
         else:
@@ -261,74 +289,8 @@ def obtener_refresh_token_perfil(nombre: str) -> str:
         datos_token: str = datos[nombre]["spotify"]
     return datos_token
 
-
-def listar_playlistsYT(youtube: object) -> dict:
-    request = youtube.playlists().list(
-                    part="snippet,id",
-                    maxResults=50,
-                    mine=True
-                    )
-    response = request.execute()
-
-    # Agrega nombre de playlist fuera de snippet >>>>>>>>>>>>>>>>>>>>>>
-    for playlist in response['items']:
-        playlist['name'] = playlist['snippet']['title']
-    return response['items']
-
-
-def ordenar_datos_playlist_SP(playlist) -> dict:            # Falta typing
-    """Recibe un objeto y ..."""                               # Falta  documentacion
-    datos_playlist: dict = {}
-    datos_playlist["name"] = playlist.name
-    datos_playlist["id"] = playlist.id
-    datos_playlist["collaborative"] = playlist.collaborative
-    datos_playlist["description"] = playlist.description
-    return datos_playlist
-
-
-def datos_playlists_SP(spotify: tk.Spotify, id_usuario: str) -> list:
-    """
-    Pre: Recibe un objeto spotify (ya con los datos de nuestro perfil elegido) y el id de Spotify del perfil actual.
-    Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
-    """
-    datos: list = []
-    datos_playlists: list = probando(spotify.playlists, [id_usuario, 50])
-    if datos_playlists[0].items:  # Si hay playlists
-        for playlist in datos_playlists[0].items:
-            datos_playlist: dict = ordenar_datos_playlist_SP(playlist)
-            datos.append(datos_playlist)
-    elif datos_playlists: # Si no hay playlists
-        datos.append("SIN PLAYLISTS")
-    return datos
-
 ######################### AGREGARLE DATOS AL PERFIL ################################################
 ####################################################################################################
-
-def probando(funcion_a_probar, datos_que_necesita: list = []) -> list:
-    """
-    Pre: Recibe una funcion junto con una lista de sus argumentos.
-    Post: Devuelve una lista vacia si el usuario dejo de intentar que su funcion, bueno, funcionara.
-          Caso contrario, devuelve una lista de un elemento con el dato buscado. 
-    """
-    terminar: bool = False
-    dato: list = []
-    while not terminar:
-        try:
-            if datos_que_necesita:
-                dato_buscado = funcion_a_probar(*datos_que_necesita)
-            else:
-                dato_buscado = funcion_a_probar()
-        except:
-            print(vis.NO_INTERNET)
-            print(" Necesitamos internet para acceder a los datos de su perfil.")
-            intentar: str = input_con_control(["si", "no"], "Desea intentarlo de nuevo(si/no)?  ", 10, "Esta costando mucho.")
-            if intentar == "no":
-                terminar: bool = True
-        else:
-            dato.append(dato_buscado)
-            terminar: bool = True
-    return dato
-
 
 def datos_necesarios_perfil(perfil: dict) -> None:
     """Le agrega datos sobre las plataformas al perfil recibido."""
@@ -347,17 +309,17 @@ def datos_necesarios_perfil(perfil: dict) -> None:
         if id_usuario:
             perfil["id_usuario_spotify"] = id_usuario[0].id 
         # Youtube:
-        print("Consiguiendo datos de Youtube...")
-        youtube = validar_permisosYT(perfil["username"])    # Falta typing
-        perfil["youtube"] = youtube
-        if "youtube" in perfil:
-            request=youtube.channels().list(
-                part= "id",
-                mine= True
-                )
-            response: list = request.execute()["items"] # Devuelve una lista con la información del canal.
-            id_YT: str = response[0]["id"]
-            perfil["id_usuario_youtube"] = id_YT
+            print("Consiguiendo datos de Youtube...")
+            youtube = validar_permisosYT(perfil["username"])
+            perfil["youtube"] = youtube
+            if "youtube" in perfil:
+                request=youtube.channels().list(
+                    part= "id",
+                    mine= True
+                    )
+                response: list = request.execute()["items"] # Devuelve una lista con la información del canal.
+                id_YT: str = response[0]["id"]
+                perfil["id_usuario_youtube"] = id_YT
 
 ####################################################################################################
 ####################################################################################################
