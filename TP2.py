@@ -198,14 +198,17 @@ def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombr
 def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
                                    lista_no_encontrados: list) -> str:
     # se ve si se encontro algo o no y se da el id.
+    id: list = []
     id_elejido: str = ""
     lista_encontrados = limpieza_yutub(search)
     for i in range(len(lista_encontrados)):
-        if lista_encontrados[i][1] == nombre:
-            if lista_encontrados[i][2] == artista:
+        if nombre in lista_encontrados[i][1]:
+            if artista in lista_encontrados[i][2]:
                 id.append(lista_encontrados[i][0])
+    print(id)
     if len(id) != 0:
-        id_elejido == lista_encontrados[0][0]
+        id_elejido = lista_encontrados[0][0]
+        print(id_elejido)
     else:
         lista_no_encontrados.append([nombre, artista])
         id_elejido = "no habemus nada"
@@ -261,6 +264,7 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
                              f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 3, ('track',))
         id: str = comparacion_con_search_youtube(search, lista_agregar[i][0], lista_agregar[i][1],
                                                  lista_no_agregado)
+        print(id)
         # se busca y se obtiene el id, si no hay ningun id el comparacion con search entrega un id con las palabras no habemus nada
         if id != "no habemus nada":
             # se agrega canción por canción
