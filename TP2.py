@@ -17,6 +17,8 @@ import googleapiclient.errors
 import youtube_dl
 import TP2_PERFILES as perf
 import TP2_VISUAL as vis
+from unidecode import unidecode
+import re
 
 ###################################################################################################
 def input_num_con_control(min:int, max:int) -> int:
@@ -87,6 +89,7 @@ def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str) -> 
 
 #### Parseo de titulos de canciones >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def limpieza_yutub(search: dict)->list:
+    print(search['items'])
     # cuando hay un search debo ordenar la información
     lista_encontrados: list = []
     for i in search['items']:
@@ -137,8 +140,7 @@ def limpieza(titulo: str, canal: str)->tuple:
     return (cancion, cantante)
 
 
-def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: object, user_id_spotifai: str,
-                       user_id_yutub: str):
+def spotify_vs_youtube(usuario_actual: dict):
     opcion: str = input("Indicar si es de spotify a youtube (1) o"
                         " de youtube a spotify (2)\n >>>")
     # donde se va a guardar la informacion de la lista de spotify
@@ -154,12 +156,10 @@ def spotify_vs_youtube(usuario_actual: dict, spotify: object, token_yutub: objec
 
     if opcion == 1:
         no_se_pudo: dict = sincronizacion_spotify_a_youtube(usuario_actual, playlist_spotifai, detalles_spotifai,
-                                     token_yutub, user_id_yutub, playlist_yutub, detalles_yutub,
-                                    spotify)
+                                       playlist_yutub, detalles_yutub)
     else:
         no_se_pudo: dict = sincronizacion_youtube_a_spotify(usuario_actual, playlist_spotifai, detalles_spotifai,
-                                       token_yutub, user_id_spotifai,  playlist_yutub,
-                                         detalles_yutub, spotify)
+                                         playlist_yutub, detalles_yutub)
     # si hay algo en el dict de no se pudo se exporta a csv sino un cartel
     if len(no_se_pudo['no se pudo']) != 0:
         exportar_dict_a_csv("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
@@ -198,25 +198,31 @@ def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombr
 def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
                                    lista_no_encontrados: list) -> str:
     # se ve si se encontro algo o no y se da el id.
-    id_elegido: str = ""
-    if len(search) != 0:
-        for i in search['items']:
-            id_elegido = i['id']['videoId']
+    id_elejido: str = ""
+    lista_encontrados = limpieza_yutub(search)
+    for i in range(len(lista_encontrados)):
+        if lista_encontrados[i][1] == nombre:
+            if lista_encontrados[i][2] == artista:
+                id.append(lista_encontrados[i][0])
+    if len(id) != 0:
+        id_elejido == lista_encontrados[0][0]
     else:
-        id_elegido = "no habemus nada"
         lista_no_encontrados.append([nombre, artista])
-    return id_elegido
+        id_elejido = "no habemus nada"
+    return id_elejido
+
 
 
 def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
-                                     token_yutub: object, user_id_yutub: str, playlist_yutub: dict,
-                                     detalles_yutub: dict, spotify: object) -> dict:
+                                      playlist_yutub: dict, detalles_yutub: dict) -> dict:
     # DE SPOTIFAI AL YUTUB
     lista_spotifai: list = []
     print_playlists_de_user(usuario_actual, "spotify")
+    spotify: object = usuario_actual['spotify']
+    youtube: object = usuario_actual['youtube']
     seleccionar_playlist(usuario_actual, playlist_spotifai, "spotify")
     # recibo la informacion de la lista elegida
-    importar_playlist(spotify, token_yutub, playlist_spotifai['id'],
+    importar_playlist(spotify, youtube, playlist_spotifai['id'],
                       playlist_spotifai['name'],
                       "spotify", detalles_spotifai)
     lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
@@ -227,10 +233,11 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
     opcion2: int = int(opcion2)
     if opcion2 == 1:
         # crear lista de youtube
-        nombre = crear_playlist_youtube(token_yutub)
+        nombre = crear_playlist_youtube(youtube)
         playlist_id: str = ""
         # se obtiene el id
-        playlist_id = dame_id_playlist(spotify, token_yutub, user_id_yutub, nombre, "youtube")
+        user_id_yutub = usuario_actual['id_usuario_youtube']
+        playlist_id = dame_id_playlist(spotify, youtube, user_id_yutub, nombre, "youtube")
         # la lista de canciones es nula
         lista_yutub: list = []
     else:
@@ -239,7 +246,7 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
         print_playlists_de_user(usuario_actual, "youtube")
         seleccionar_playlist(usuario_actual, playlist_yutub, "youtube", True)
         # recibo la informacion de la lista elegida
-        importar_playlist(spotify, token_yutub, playlist_yutub['id'], playlist_yutub['name'],
+        importar_playlist(spotify, youtube, playlist_yutub['id'], playlist_yutub['name'],
                           "youtube", detalles_yutub)
         playlist_id: str = detalles_yutub['id']
         # la lista de canciones se desconoce (en forma de lista) por lo que llamo a la función
@@ -249,14 +256,14 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
     # es la lista de aquellos que no se puede
     lista_no_agregado: list = []
     for i in range(len(lista_agregar)):
-        search = buscar_item(spotify, token_yutub, "youtube",
-                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
+        search = buscar_item(spotify, youtube, "youtube",
+                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 3, ('track',))
         id: str = comparacion_con_search_youtube(search, lista_agregar[i][0], lista_agregar[i][1],
                                                  lista_no_agregado)
         # se busca y se obtiene el id, si no hay ningun id el comparacion con search entrega un id con las palabras no habemus nada
         if id != "no habemus nada":
             # se agrega canción por canción
-            agregar_cancion_a_youtube(playlist_id, id, token_yutub)
+            agregar_cancion_a_youtube(playlist_id, id, youtube)
     no_se_pudo: dict = {}
     no_se_pudo['no se pudo'] = lista_no_agregado
     return no_se_pudo
@@ -268,27 +275,42 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
                                    lista_no_encontrados: list) -> None:
     # limpio el search y si no se encontro se suma a los no encontrados.
     # es más posible que esto suceda ya que puede haber cosas en las listas de youtube que no es música
-    if len(search) !=0 :
-        for x in search:
-            for item in x.items:
-                uris.append(item.uri)
-    else:
-        lista_no_encontrados.append([nombre, artista])
+    lista_encontrados: list = []
+    for x in search:
+        for item in x.items:
+            for artist in item.album.artists:
+                lista_encontrados.append([item.uri, item.name, artist.name])
+        # verifico que sea esa cancion
+    for i in range(len(lista_encontrados)):
+        if lista_encontrados[i][1] == nombre:
+            if lista_encontrados[i][2] == artista:
+                uris.append(lista_encontrados[i][0])
+                # como hay solo una cancion posible no tengo que preocuparme que agregue de mas
+    for j in range(len(uris)):
+        agrego: bool = False
+        for k in range(len(lista_encontrados)):
+            if uris[j] == lista_encontrados[k][0]:
+                agrego = True
+        if agrego == False:
+            lista_no_encontrados.append([nombre, artista])
 
 
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
-                                     token_yutub: object, user_id_spotifai: str, playlist_yutub: dict,
-                                     detalles_yutub: dict, spotify: object, emergencia:bool= False) -> dict:
+                                     playlist_yutub: dict,
+                                     detalles_yutub: dict,  emergencia:bool= False) -> dict:
     # A ESTE PUNTO LA PROGRAMADORA SE ESTA PREGUNTANDO SI ES BUENA IDEA SEGUIR VIVIENDO
     playlist_id: str = ""
     lista_yutub: list = []
+    spotify: object = usuario_actual['spotify']
+    youtube: object = usuario_actual['youtube']
+    user_id_spotifai: str = usuario_actual['id_usuario_spotify']
     # youtube a spotify
     if not emergencia:
         print_playlists_de_user(usuario_actual, "youtube")
         seleccionar_playlist(usuario_actual, playlist_yutub, "youtube")
 
     # recibo la informacion de la lista elegida
-    importar_playlist(spotify, token_yutub, playlist_yutub['id'], playlist_yutub['name'],
+    importar_playlist(spotify, youtube, playlist_yutub['id'], playlist_yutub['name'],
                       "youtube", detalles_yutub)
     # busco las canciones en la lista que eleji de youtube
     lista_canciones(detalles_yutub, lista_yutub, "youtube")
@@ -302,14 +324,14 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
         lista_spotifai: list = []
         nombre: str = crear_playlist_spotify(user_id_spotifai, spotify)
         # como recibo la informacion de la playlist que elegí, necesito id
-        playlist_id = dame_id_playlist(spotify, token_yutub, user_id_spotifai, nombre, 'spotify')
+        playlist_id = dame_id_playlist(spotify, youtube, user_id_spotifai, nombre, 'spotify')
     elif opcion2 == 2:
         # uso una de las de ahí
         lista_spotifai: list = []
         print_playlists_de_user(usuario_actual, "spotify")
         seleccionar_playlist(usuario_actual, playlist_spotifai, "spotify", True)
         # recibo la informacion de la lista elegida
-        importar_playlist(spotify, token_yutub,playlist_spotifai['id'], playlist_spotifai['name'],
+        importar_playlist(spotify, youtube, playlist_spotifai['id'], playlist_spotifai['name'],
                           "spotify", detalles_spotifai)
         # busco las canciones que están en spotify
         lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
@@ -321,7 +343,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     # lista_encontrados: list = []
     # uris de las canciones
     for i in range(len(lista_agregar)):
-        search = buscar_item(spotify, token_yutub, "spotify",
+        search = buscar_item(spotify, youtube, "spotify",
                              f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
 
         # acá voy agregando las uris de lo que encuentro
@@ -395,9 +417,10 @@ def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> N
 
 
 def al_wordcloud(letra_total: str, usuario:str, id_playlist:str) -> None:
-    # para que el request de algun valor como las letras de la canción es muy larga se debió hacer un json con todo el rejunte
+    # para que el request de algun valor como las letras de la canción es muy larga se debió hacer un json
     # el problema acá es que json no le cae muy bien el español u otros idiomas que no sean el ingles
     jsonito = json.dumps(letra_total)
+    jsonito = (re.sub('[^A-Za-z0-9]+', ' ', unidecode(jsonito)))
     resp = requests.post('https://quickchart.io/wordcloud', json={
         "format": "png",
         "width": 1000,
@@ -1229,8 +1252,7 @@ def main() -> None:
                 administracion_de_canciones(usuario_actual)
             elif seleccion == 5:
                 #Sincronizar playlists
-                spotify_vs_youtube(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'],
-                                usuario_actual['id_usuario_spotify'], usuario_actual['id_usuario_youtube'])
+                spotify_vs_youtube(usuario_actual)
             elif seleccion == 6:
                 #Generar wordcloud
                 wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'])

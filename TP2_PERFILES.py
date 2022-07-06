@@ -210,7 +210,7 @@ def manejo_perfiles(perfil: dict, credenciales_SP: tuple):
 ######################### YOUTUBE: VALIDACION DE PERMISOS ##########################################
 ####################################################################################################
 
-def validar_permisosYT(usuario: str, youtube: object) -> object:
+def validar_permisosYT(usuario: str) -> object:
     """ Corrobora que las credenciales para hacer solicitdudes a la API estén vigentes.
     En caso de que no lo estén, solicita nuevas y genera un nuevo cliente. """
     datos: dict = sacar_info_json("datos_perfiles.json")
