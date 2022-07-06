@@ -382,8 +382,8 @@ def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> N
 def al_wordcloud(letra_total: str, usuario:str, id_playlist:str) -> None:
     # para que el request de algun valor como las letras de la canción es muy larga se debió hacer un json
     # el problema acá es que json no le cae muy bien el español u otros idiomas que no sean el ingles
-    jsonito = json.dumps(letra_total)
-    jsonito = (re.sub('[^A-Za-z0-9]+', ' ', unidecode(jsonito)))
+    letraza: str = linda_letra(letra_total)
+    jsonito = json.dumps(letraza)
     resp = requests.post('https://quickchart.io/wordcloud', json={
         "format": "png",
         "width": 1000,
@@ -399,6 +399,21 @@ def al_wordcloud(letra_total: str, usuario:str, id_playlist:str) -> None:
 
     with open(f'wordcloud_{usuario}_{id_playlist}.png', 'wb') as f:
         f.write(resp.content)
+
+
+def linda_letra(letra:str)-> str:
+    for i in range(len(letra)-1):
+        if letra[i+1].isalpha():
+            re.sub('[^A-Za-z0-9]+', '', unidecode(letra))
+        else:
+            re.sub('[^A-Za-z0-9]+', ' ', unidecode(letra))
+    while "\n" in letra:
+        star: int = letra.find('\n')
+        comienzo = letra[0:star]
+        fin: str = letra[star + 1:len(letra)]
+        espacio: str = ' '
+        letra = comienzo + espacio + fin
+    return letra
 
 
 def mostrame_esta_imagen(usuario: str, id_playlist: str) -> None:
