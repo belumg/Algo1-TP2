@@ -342,6 +342,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
 ### ----------------------- WORDCLOUD -------------------------------------------------------------
 ###################################################################################################
 
+
 def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> None:
     print("Hola en esta seccion tenemos imagenes de palabras marque: \n"
           "[1] si desea hacerlo con una playlist de spotify \n"
@@ -414,6 +415,7 @@ def linda_letra(letra:str)-> str:
         espacio: str = ' '
         letra = comienzo + espacio + fin
     return letra
+
 
 
 def mostrame_esta_imagen(usuario: str, id_playlist: str) -> None:
