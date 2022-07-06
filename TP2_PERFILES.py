@@ -364,19 +364,16 @@ def datos_agregados_correctamente(usuario_actual: dict, credenciales_SP: tuple) 
     Pre: Recibe un diccionario con los datos del perfil actual.
     Post: Devuelve un False si encuentra que falta un dato importante.
     """
+    resultado: bool = True
     if not usuario_actual["username"]:
-        return False
+        resultado = False
     datos_necesarios_perfil(usuario_actual, credenciales_SP)
     if "spotify" not in usuario_actual:
-        return False
+        resultado = False
     elif "id_usuario_spotify" not in usuario_actual:
-        return False
-    elif "playlists_spotify" not in usuario_actual:
-        return False
+        resultado = False
     elif "youtube" not in usuario_actual:
-        return False
+        resultado = False
     elif "id_usuario_youtube" not in usuario_actual:
-        return False
-    elif "playlists_youtube" not in usuario_actual:
-        return False
-    return True
+        resultado = False
+    return resultado
