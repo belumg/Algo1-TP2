@@ -98,6 +98,7 @@ NOMBRE_NO_VALIDO: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
+
 INSTRUCCIONES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
               [INSTRUCCIONES]
@@ -106,6 +107,7 @@ INSTRUCCIONES: str = """
      - Copiar nueva URL.
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
 
 ERROR_URL: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -117,11 +119,13 @@ ERROR_URL: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
+
 DATOS_GUARDADOS: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
       [DATOS GUARDADOS EXITOSAMENTE]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
 
 NO_PERFILES: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -171,6 +175,7 @@ def mostrar_cancion(cancion: dict, orden: int, titulo: str = "") -> None:
         ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
         """)
 
+
 def mostrar_nombre_vid(cancion: dict, orden: int, titulo: str = "") -> None:
     print(f"""     {titulo}
         ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -219,6 +224,7 @@ MENU: str = """
          ╚══════════════════════════════════════════╝  
     """
 
+
 NO_INTERNET: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 
@@ -231,7 +237,8 @@ NO_INTERNET: str = """
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
 
-def falta_archivo(nombre_plataforma: str) -> None:
+
+def falta_archivo() -> None:
     """Imprime un mensaje que le avisa al usuario que archivo le falta para que el software se pueda ejecutar."""
     print(f"""
 ⠄⠄⠄⠄⠄⠄⢀⣠⣤⣶⣶⣶⣤⣄⠄⠄⢀⣠⣤⣤⣤⣤⣀⠄⠄⠄⠄⠄⠄⠄
@@ -241,7 +248,7 @@ def falta_archivo(nombre_plataforma: str) -> None:
 ⣠⡄⣿⣿⣿⣿⣿⣿⣿⠿⢟⣛⣫⣭⠉⠍⠉⣛⠿⡘⣿⠿⢟⣛⡛⠉⠙⠻⢿⡄    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣶⣶⣶⣶⣶⣶⣶⣭⣍⠄⣡⣬⣭⣭⣅⣈⣀⣉⣁⠄            [FALTA UN ARCHIVO]
 ⣿⣿⣿⣿⣿⣿⣿⣿⣶⣭⣛⡻⠿⠿⢿⣿⡿⢛⣥⣾⣿⣿⣿⣿⣿⣿⣿⠿⠋⠄      Necesitamos el archivo:
-⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣩⣵⣾⣿⣿⣯⣙⠟⣋⣉⣩⣍⡁⠄⠄⠄        - "credenciales_{nombre_plataforma}.json"
+⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣩⣵⣾⣿⣿⣯⣙⠟⣋⣉⣩⣍⡁⠄⠄⠄        - "credenciales.json"
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣿⣿⣿⣷⡄⠄⠄        Sin ese archivo no podemos
 ⣿⣿⣿⣿⣿⣿⡿⢟⣛⣛⣛⣛⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⡀⠄           ejecutar el software 
 ⣿⣿⣿⣿⣿⡟⢼⣿⣯⣭⣛⣛⣛⡻⠷⠶⢶⣬⣭⣭⣭⡭⠭⢉⡄⠶⠾⠟⠁⠄    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -250,6 +257,7 @@ def falta_archivo(nombre_plataforma: str) -> None:
 ⣭⣙⡒⠦⠭⣭⣛⣛⣛⡻⠿⠿⠟⣛⣛⣛⣛⡋⣶⡜⣟⣸⣠⡿⣸⠇⣧⡀⠄⠄
 ⣿⣿⣿⣿⣷⣶⣦⣭⣭⣭⣭⣭⣭⣥⣶⣶⣶⡆⣿⣾⣿⣿⣿⣷⣿⣸⠉⣷⠄⠄
 """)
+
 
 def falta_plataforma(nombre_plataforma: str) -> None:
     """Imprime un mensaje que le avisa al usuario que le falta dar permisos a una plataforma."""
@@ -260,6 +268,7 @@ def falta_plataforma(nombre_plataforma: str) -> None:
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     - Faltan los permisos de: {nombre_plataforma}
     """)
+
 
 PLAYLIST_CREADA: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
