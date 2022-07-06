@@ -99,7 +99,7 @@ def limpieza_yutub(search: dict)->list:
         id: str = i['id']['videoId']
         cancion: str = ""
         cantante:  str = ""
-        cancion,cantante = limpieza(titulo, search['items'][0]['channelTitle'])
+        cancion, cantante = limpieza(titulo, i['snippet']['channelTitle'])
         lista_encontrados.append([id, cancion, cantante])
     return lista_encontrados
 
@@ -246,6 +246,7 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
         print_playlists_de_user(usuario_actual, "youtube")
         seleccionar_playlist(usuario_actual, playlist_yutub, "youtube", True)
         # recibo la informacion de la lista elegida
+        print(playlist_yutub)
         importar_playlist(spotify, youtube, playlist_yutub['id'], playlist_yutub['name'],
                           "youtube", detalles_yutub)
         playlist_id: str = detalles_yutub['id']
@@ -663,31 +664,40 @@ def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
 def normalizar_playlist_youtube(info_playlist:list, detalles:dict, playlist_id:str, playlist_nombre:str) -> None:
     #Recibe los datos dados por la api en list info_playlist
     #Devuelve los datos con las keys asignadas en dict detalles
+    print(info_playlist)
     detalles['id'] = playlist_id
     detalles['name'] = playlist_nombre
     detalles['tracks'] = []
-    detalles['owner'] = {
-        'display_name': info_playlist[0]['snippet']['channelTitle'],
-        'id': "unknown",
-        'uri': "unknown"
-    }
+    if len(info_playlist)!=0:
+        detalles['owner'] = {
+            'display_name': info_playlist[0]['snippet']['channelTitle'],
+            'id': "unknown",
+            'uri': "unknown"
+        }
 
-    for i in info_playlist:
-        detalles['tracks'].append(
-                {'artists': i['snippet']['videoOwnerChannelTitle'],
-                 'id': i['id'],
-                 'name': i['snippet']['title'],
-                 'track_number': i['snippet']['position'],
-                 'uri': 'unknown'
-                 }
-        )
+        for i in info_playlist:
+            detalles['tracks'].append(
+                    {'artists': i['snippet']['videoOwnerChannelTitle'],
+                     'id': i['id'],
+                     'name': i['snippet']['title'],
+                     'track_number': i['snippet']['position'],
+                     'uri': 'unknown'
+                     }
+            )
+    else:
+        detalles['owner'] = {
+            'display_name': 'unknown',
+            'id': "unknown",
+            'uri': "unknown"
+        }
+        detalles['tracks'] = []
 
 
-def importar_playlist(spotify:object, token_youtube:object, playlist_id:str, playlist_nombre:str,
-                      servidor:str, detalles_playlist:dict) -> None:
+def importar_playlist(spotify: object, token_youtube: object, playlist_id: str, playlist_nombre: str,
+                      servidor: str, detalles_playlist: dict) -> None:
     #Recibe una playlist (nombre, id, servidor) y los objetos de los servidores disponibles
     #La devuelve con todos sus items detallados
-    info_playlist:list=list()
+    info_playlist: list = list()
     if servidor == "spotify":
         info_playlist.append(Spotify.playlist(spotify, playlist_id, fields=None, market=None, as_tracks=True))
         normalizar_playlist_spotify(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
@@ -1184,7 +1194,7 @@ def conseguir_datos_playlistsYT(youtube: object) -> list:
     for i in range(len(data_response)):
         diccionario: dict = {}
         diccionario["name"] = data_response[i]["snippet"]["title"]
-        diccionario["id"] = data_response[i]["snippet"]["channelId"]
+        diccionario["id"] = data_response[i]['id']
         diccionario["collaborative"] = data_response[i]["status"]["privacyStatus"]
         diccionario["description"] = data_response[i]["snippet"]["description"]
         lista_dicc_playlistsYT.append(diccionario)
