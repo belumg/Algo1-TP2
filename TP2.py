@@ -18,9 +18,9 @@ import re
 def input_num_con_control(min: int, max: int) -> int:
     #Recibo el rango de opciones para un menu numerico
     #Devuelve una opción en ese rango como int
-    seleccion = input("      >>>    ")
+    seleccion = input("      >>>    ").strip()
     while not seleccion.isnumeric() or int(seleccion) > max or int(seleccion) < min:
-        seleccion = input("Inválido. Vuelva a ingresar >>> ")
+        seleccion = input("Inválido. Vuelva a ingresar >>> ").strip()
     seleccion = int(seleccion)
     return seleccion
 
@@ -241,6 +241,7 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
     # es más posible que esto suceda ya que puede haber cosas en las listas de youtube que no es música
     lista_encontrados: list = []
     urisueltos: list = []
+    agrego: bool = False
     for x in search:
         for item in x.items:
             for artist in item.album.artists:
@@ -252,7 +253,6 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
     if len(urisueltos) != 0:
         uris.append(urisueltos[0])   
     for j in range(len(uris)):
-        agrego: bool = False
         for k in range(len(lista_encontrados)):
             if uris[j] == lista_encontrados[k][0]:
                 agrego = True
@@ -596,23 +596,6 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
         print("Ha seleccionado un código demasiado alto, no tenemos tantas playlists. ")
 
 
-
-
-    """  if servidor == "spotify" and seleccion>len(usuario_actual['playlists_spotify']):
-            print("Número de playlist ingresado inválido.")
-        elif servidor == "youtube" and seleccion>len(usuario_actual['playlists_youtube']):
-            print("Número de playlist ingresado inválido.")
-        else:
-            permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-            while servidor == "spotify" and permisos and not permitido:
-                print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
-                seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
-                permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-            mi_playlist['servidor'] = servidor
-            mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
-            mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id'] """
-
-
 def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
                                 playlist_id:str, playlist_nombre:str) -> None:
     #Recibe los datos dados por la api en list info_playlist
@@ -796,7 +779,7 @@ def realizar_analisis_playlist (usuario_actual:dict, mi_playlist:dict) -> None:
         print("No podemos realizar un analisis de atributos musicales para"
               " playlists en youtube.") #Youtube Music API when ??
         print("Podemos sincronizar con spotify y realizar el analisis de las canciones que estén en esa plataforma.")
-        sincronizar:str = input("[S] aceptar \nCualquier [Tecla] volver\n     >>>   ").lower()
+        sincronizar:str = input("- [S] aceptar \n- Cualquier [Tecla] volver\n     >>>   ").lower()
         if sincronizar == "s":
             sincronizacion_de_emergencia(usuario_actual, mi_playlist)
 
@@ -817,9 +800,9 @@ def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
 
 def seleccion_servidor() -> str:
     #Devuelve un str del servidor elegido por el user entre las opciones disponibles
-    servidor = input("Ingrese el servidor en el que desea buscar: ").lower()
+    servidor = input("Ingrese el servidor en el que desea buscar: ").lower().strip()
     while not servidor == "spotify" and not servidor == "youtube":
-        servidor = input("Servidor inválido, vuelva a ingresar >>> ").lower()
+        servidor = input("Servidor inválido, vuelva a ingresar >>> ").lower().strip()
     return servidor
 
 def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servidor:str) -> None:
