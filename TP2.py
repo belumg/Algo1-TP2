@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import cv2 as cv
 import tekore as tk
-from tekore import Spotify
 import requests
 from lyricsgenius import Genius
 import csv
@@ -686,7 +685,7 @@ def importar_playlist(spotify: object, token_youtube: object, playlist_id: str, 
     #La devuelve con todos sus items detallados
     info_playlist: list = list()
     if servidor == "spotify":
-        info_playlist.append(Spotify.playlist(spotify, playlist_id, fields=None, market=None, as_tracks=True))
+        info_playlist.append(spotify.playlist(playlist_id, fields=None, market=None, as_tracks=True))
         normalizar_playlist_spotify(info_playlist, detalles_playlist, playlist_id, playlist_nombre)
     elif servidor == "youtube":
         youtube: object = token_youtube
