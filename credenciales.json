@@ -1,0 +1,23 @@
+{
+   "genius": {
+      "token_genius": "OomA5Dwkt15uqiCNHKthDcDx7gqYbFAkXeQFoX_DHqu-C6NQzyuBoxOY5o76C64P"
+   },
+   "spotify": {
+      "id_cliente": "176365611325455e8059fbd545371d89",
+      "cliente_secreto": "ed35a90b681042f4bbad9f284383c88a",
+      "uri_redireccion": "http://localhost:8888/callback"
+   },
+   "youtube": {
+      "installed": {
+         "client_id": "730609130735-t00i3sjkjo7kj2kdriqfrgnkiqgc7f58.apps.googleusercontent.com",
+         "project_id": "pivotal-purpose-354918",
+         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+         "token_uri": "https://oauth2.googleapis.com/token",
+         "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+         "client_secret": "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",
+         "redirect_uris": [
+            "http://localhost"
+         ]
+      }
+   }
+}
