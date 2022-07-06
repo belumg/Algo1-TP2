@@ -277,7 +277,8 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
     for i in range(len(lista_encontrados)):
         if lista_encontrados[i][2] in nombre or lista_encontrados[i][2] in artista:
             urisueltos.append(lista_encontrados[i][0])
-    uris.append(urisueltos[0])
+    if len(urisueltos) != 0:
+        uris.append(urisueltos[0])
     for j in range(len(uris)):
         agrego: bool = False
         for k in range(len(lista_encontrados)):
@@ -285,6 +286,7 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
                 agrego = True
     if agrego == False:
         lista_no_encontrados.append([nombre, artista])
+
 
 
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
@@ -588,23 +590,27 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
     plataforma: object = usuario_actual[servidor]
 
     # Obtengo las playlists según la plataforma.
-    if (servidor == "spotify"):
-        playlists: list = perf.datos_playlists_SP(plataforma, usuario_actual["id_usuario_spotify"])
-    elif (servidor == "youtube"):
-        playlists: list = conseguir_datos_playlistsYT(plataforma)
+    try:
+        if (servidor == "spotify"):
+            playlists: list = perf.datos_playlists_SP(plataforma, usuario_actual["id_usuario_spotify"])
+        elif (servidor == "youtube"):
+            playlists: list = conseguir_datos_playlistsYT(plataforma)
 
-    if (seleccion>len(playlists)):
-        print("Número de playlist ingresado inválido.")
-    else:
-        permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-        while servidor == "spotify" and permisos and not permitido:
-            print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
-            seleccion = input_num_con_control(1,len(playlists)+1)
+        if (seleccion>len(playlists)):
+            print("Número de playlist ingresado inválido.")
+        else:
             permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
+            while servidor == "spotify" and permisos and not permitido:
+                print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
+                seleccion = input_num_con_control(1,len(playlists)+1)
+                permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
 
-        mi_playlist['servidor'] = servidor
-        mi_playlist['name'] = playlists[seleccion - 1]['name']
-        mi_playlist['id'] = playlists[seleccion - 1]['id']
+            mi_playlist['servidor'] = servidor
+            mi_playlist['name'] = playlists[seleccion - 1]['name']
+            mi_playlist['id'] = playlists[seleccion - 1]['id']
+    except IndexError:
+        print("Ha seleccionado un código demasiado alto, no tenemos tantas playlists. ")
+
 
 
 
@@ -818,8 +824,7 @@ def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
     detalles_spotify: dict = dict()
     detalles_youtube: dict = dict()
     nueva_playlist:dict = sincronizacion_youtube_a_spotify(usuario_actual, temp_spotify, detalles_spotify,
-                                     usuario_actual['youtube'], usuario_actual['id_usuario_youtube'],
-                                     mi_playlist, detalles_youtube, usuario_actual['spotify'], True)
+                                     mi_playlist, detalles_youtube, True)
     realizar_analisis_playlist(usuario_actual, nueva_playlist)
 
 
