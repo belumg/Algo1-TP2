@@ -297,7 +297,7 @@ def datos_playlists_SP(spotify, id_usuario):
     datos_playlists = probando(spotify.playlists, [id_usuario])  # Que pasa si el usuario no tiene playlists?
     if not datos_playlists:
         return datos
-    for playlist in datos_playlists.items:
+    for playlist in datos_playlists[0].items:
         datos_playlist: dict = {}
         datos_playlist["name"] = playlist.name
         datos_playlist["id"] = playlist.id
