@@ -613,7 +613,9 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
 
         mi_playlist['servidor'] = servidor
         mi_playlist['name'] = playlists[seleccion - 1]['name']
+        print(mi_playlist['name'])
         mi_playlist['id'] = playlists[seleccion - 1]['id']
+        print(mi_playlist['id'])
 
 
 
@@ -1160,7 +1162,7 @@ def listar_playlistsYT(youtube: object) -> dict:
     # Agrega nombre de playlist fuera de snippet >>>>>>>>>>>>>>>>>>>>>>
     for playlist in response['items']:
         playlist['name'] = playlist['snippet']['title']
-
+    print(response['items'])
     return response['items']
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
@@ -1181,10 +1183,10 @@ def conseguir_datos_playlistsYT(youtube: object) -> list:
     data_response: dict = listar_playlistsYT(youtube)
     for i in range(len(data_response)):
         diccionario: dict = {}
-        diccionario["name"] = data_response[0]["snippet"]["title"]
-        diccionario["id"] = data_response[0]["snippet"]["id"]
-        diccionario["collaborative"] = data_response[0]["status"]["privacyStatus"]
-        diccionario["description"] = data_response[0]["snippet"]["description"]
+        diccionario["name"] = data_response[i]["snippet"]["title"]
+        diccionario["id"] = data_response[i]["snippet"]["channelId"]
+        diccionario["collaborative"] = data_response[i]["status"]["privacyStatus"]
+        diccionario["description"] = data_response[i]["snippet"]["description"]
         lista_dicc_playlistsYT.append(diccionario)
     return lista_dicc_playlistsYT
 
