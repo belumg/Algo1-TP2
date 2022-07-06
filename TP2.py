@@ -26,42 +26,46 @@ def input_num_con_control(min:int, max:int) -> int:
 ### ----------------------- CONSEGUIR PLAYLISTS (YT/SP) -------------------------------------------
 ###################################################################################################
 
-def listar_playlistsYT(youtube: object) -> dict:
-    """ Recupera la data de todas las playlists que tiene un usuario en Youtube """
+def listar_playlistsYT(youtube: object) -> list:
+    """Recupera la data de todas las playlists que tiene un usuario en Youtube """
     request = youtube.playlists().list(
                     part="snippet,id,status,contentDetails",
                     maxResults=50,
                     mine=True
                     )
-    response = request.execute()
-    # En caso de que haya más de 50 resultados: 
-    nextPageToken = response.get("nextPageToken")
-    while ("nextPageToken" in response):
-        nextPage = youtube.playlists().list(
-                        part="snippet",
-                        maxResults="50",
-                        pageToken=nextPageToken
-                        ).execute()
-        response["items"] = response["items"] + nextPage["items"]
+    response: list = perf.probando(request.execute)
+    if response:
+        # En caso de que haya más de 50 resultados: 
+        nextPageToken = response[0].get("nextPageToken")
+        while ("nextPageToken" in response[0]):
+            nextPage = youtube.playlists().list(
+                            part="snippet",
+                            maxResults="50",
+                            pageToken=nextPageToken
+                            ).execute()
+            response[0]["items"] = response[0]["items"] + nextPage["items"]
 
-        if "nextPageToken" not in nextPage:
-            response.pop("nextPageToken", None)
-        else:
-            nextPageToken = nextPage["nextPageToken"]
-    return response['items']
+            if "nextPageToken" not in nextPage:
+                response[0].pop("nextPageToken", None)
+            else:
+                nextPageToken = nextPage["nextPageToken"]
+        datos_playlists: list = response[0]["items"]
+    else:
+        datos_playlists: list = ["SIN INTERNET"]
+    return datos_playlists
 
 def ordenar_datos_playlist_YT(playlist) -> dict:
     """Recibe un objeto con los datos de la playlist y devuelvo un diccionario solo con los que necesitamos."""
     datos_playlist: dict = {}
-    datos_playlist["nombre"] = playlist["snippet"]["title"]
+    datos_playlist["name"] = playlist["snippet"]["title"]
     datos_playlist["id"] = playlist["id"]
     datos_playlist["collaborative"] = playlist["status"]["privacyStatus"]
     datos_dueño_playlist: dict = {
-        "nombre": playlist["snippet"]["channelTitle"],
+        "name": playlist["snippet"]["channelTitle"],
         "id": playlist["snippet"]["channelId"],
         "uri": "desconocido"
     }
-    datos_playlist["dueño"] = datos_dueño_playlist
+    datos_playlist["owner"] = datos_dueño_playlist
     datos_playlist["cant_tracks"] = playlist["contentDetails"]["itemCount"]
     return datos_playlist    
 
@@ -70,25 +74,28 @@ def datos_playlists_YT(youtube: object) -> list:
     """ Consigue el id, nombre, descripción y estado (publica o privada) de todas las playlists 
     del usuario para el que se haya solicitado """
     datos: list = []
-    data_response: dict = listar_playlistsYT(youtube)
-    for i in range(len(data_response)):
-        datos_playlist: dict = ordenar_datos_playlist_YT(data_response[i])
-        datos.append(datos_playlist)
+    data_response: list = listar_playlistsYT(youtube)
+    if data_response and data_response[0] == "SIN INTERNET":
+        datos.append("SIN INTERNET")
+    else:
+        for i in range(len(data_response)):
+            datos_playlist: dict = ordenar_datos_playlist_YT(data_response[i])
+            datos.append(datos_playlist)
     return datos
 
 
 def ordenar_datos_playlist_SP(playlist) -> dict:            # Falta typing
     """Recibe un objeto con los datos de la playlist y devuelvo un diccionario solo con los que necesitamos."""
     datos_playlist: dict = {}
-    datos_playlist["nombre"] = playlist.name
+    datos_playlist["name"] = playlist.name
     datos_playlist["id"] = playlist.id
     datos_playlist["collaborative"] = playlist.collaborative
     datos_dueño_playlist: dict = {
-        "nombre": playlist.owner.display_name,
+        "name": playlist.owner.display_name,
         "id": playlist.owner.id,
         "uri": playlist.owner.uri
     }
-    datos_playlist["dueño"] = datos_dueño_playlist
+    datos_playlist["owner"] = datos_dueño_playlist
     datos_playlist["cant_tracks"] = playlist.tracks.total
     return datos_playlist
 
@@ -117,14 +124,14 @@ def lista_canciones(tracks: list, lista_cancion: list, servidor: str) -> None:
     # Lista las canciones para poder comparar si hay alguna, para que no se repitan
     if servidor == "spotify":
         for track in tracks:
-            lista_cancion.append([track["nombre"], ",".join(track["artistas"])])
+            lista_cancion.append([track["name"], ",".join(track["artists"])])
     if servidor == "youtube":
         # la misma función pero para youtubr
         for track in tracks:
             cancioncita: str = ""
             artistis: str = ""
             # se intenta limpiar el nombre para poder encontrarlo en spotify
-            cancioncita, artistis = limpieza(track["nombre"], track["artistas"])
+            cancioncita, artistis = limpieza(track["name"], track["artists"])
             lista_cancion.append([cancioncita, artistis])
 
 
@@ -291,7 +298,7 @@ def elegir_crear_playlist_YT(usuario_actual, token_yutub) -> list:
             playlist_elegida: dict = datos_playlists[indice_otra_playlist_elegida-1]
             tracks: list = tracks_playlist_spotify(token_yutub, playlist_elegida["id"])
             lista_canciones(tracks, lista_yutub, "youtube")
-            nombre: str = playlist_elegida["nombre"]
+            nombre: str = playlist_elegida["name"]
             playlist_id: str = playlist_elegida["id"]
     return lista_yutub, nombre, playlist_id
 
@@ -497,6 +504,9 @@ def mostrame_esta_imagen(usuario: str, id_playlist: str) -> None:
 ###################################################################################################
 
 def crear_playlist_spotify(usuario_actual: dict) -> tuple:
+    """
+    
+    """
     # acá se crean las listas y devuelve el nombre que se le dio para buscar más tarde el id
     nombre: str = input("Indique el nombre para la playlist de Spotify: ")
     publica: str = input("Indique si desea que sea publica (s/n): ")
@@ -511,7 +521,10 @@ def crear_playlist_spotify(usuario_actual: dict) -> tuple:
 
 
 def crear_playlist_youtube(youtube: object) -> tuple:
-    # acá lo mismo pero para youtube
+    """
+    Pre: Recibe un objeto youtube.
+    Post: Devuelve el nombre y la id de la playlist creada.
+    """
     nombre: str = input("Indicame el nombre bebe: ")
     descripcion: str = input("La descripcion please: ")
     eleccion_privacidad: str = perf.input_con_control(["p", "n"], "Privado (p) o No privado (n), esa es la cuestion: ",
@@ -537,7 +550,7 @@ def crear_playlist_youtube(youtube: object) -> tuple:
 
 
 def crear_playlist(usuario_actual: dict, token_youtube: object) -> None:
-    # la función en si para que el usuario elija en que plataforma crearlo
+    """Una vez que elijas una plataforma, te lleva a la funcion necesaria para crearla."""
     vis.youtube_spotify()
     opcion: int = input_num_con_control(1, 3)
     if opcion == 1:
@@ -572,7 +585,7 @@ def print_playlists_de_user(servidor: str, datos_playlists: list) -> None:
     elif datos_playlists and datos_playlists[0] == "SIN INTERNET":
         print("Necesitamos internet para esto, intentalo despues.")
     else:
-        nombres_playlists = [playlist["nombre"] for playlist in datos_playlists]
+        nombres_playlists = [playlist["name"] for playlist in datos_playlists]
         vis.visual_lista_elementos(nombres_playlists, f"Playlists de {servidor}", True)
     
 def seleccion_servidor() -> str:
@@ -583,8 +596,10 @@ def seleccion_servidor() -> str:
     return servidor
 
 def playlist_segun_servidor(usuario_actual: dict, elegir_ambas: bool = True) -> tuple:
-    #Recibe la información de usuario
-    #Devuelve el nombre del servidor en el que elige trabajar el usuario
+    """
+    Pre: Recibe la info. del usuario y un bool que nos dice si puede o no elegir ambos servidores.
+    Post: Devuelve el nombre del servidor elegido y las playlists de ese servidor.
+    """
     vis.youtube_spotify(mostar_ambas=True)
     seleccion: int = input_num_con_control(1,3)
     print("Obteniendo datos...")
@@ -605,12 +620,14 @@ def playlist_segun_servidor(usuario_actual: dict, elegir_ambas: bool = True) -> 
         servidor: str = "unknown"
 
     if not elegir_ambas and seleccion == 3:
-        servidor: str = seleccion_servidor()
-        if servidor == "spotify":
-            datos_playlists: list = datos_playlists_SP
+        if not datos_playlists_YT and not datos_playlists_SP:
+            print("Bueno, parece que no tienes playlists en ninguna plataforma.")
         else:
-            datos_playlists: list = datos_playlists_YT
-
+            servidor: str = seleccion_servidor()
+            if servidor == "spotify":
+                datos_playlists: list = datos_playlists_SP
+            else:
+                datos_playlists: list = datos_playlists_YT
     return servidor, datos_playlists
 
 
@@ -623,12 +640,13 @@ def comprobar_permisos(usuario_actual: dict, servidor:str, seleccion:int, datos_
         if datos_playlists[seleccion - 1]['collaborative']:
             permitido: bool = True
         else:
-            dueño_playlist = datos_playlists[seleccion - 1]['dueño']
+            dueño_playlist = datos_playlists[seleccion - 1]['owner']
             if dueño_playlist["id"] == usuario_actual['id_usuario_spotify']:
                 permitido: bool = True
     return permitido
 
 def seleccionar_playlist(usuario_actual, datos_playlists: list, servidor: str, permisos: bool = False) -> int:
+    """Devuelve el indice de la playlist elegida."""
     permitido: bool = False
     print("Seleccione una playlist ")
     seleccion: int = input_num_con_control(1, len(datos_playlists))
@@ -646,13 +664,13 @@ def tracks_playlist_spotify(spotify: object, id_playlist_elegida: str) -> list: 
     if datos_tracks_desordenado["items"]:
         for dato in datos_tracks_desordenado["items"]:
             datos_track: dict = {}
-            datos_track["nombre"] = dato["track"]["name"]
+            datos_track["name"] = dato["track"]["name"]
             datos_track["id"] = dato["track"]["id"]
             artistas: list = []
             for artista in dato["track"]["artists"]:
                 artistas.append(artista["name"])
-            datos_track["artistas"] = artistas
-            datos_track["numero_track"] = dato["track"]["track_number"]
+            datos_track["artists"] = artistas
+            datos_track["track_number"] = dato["track"]["track_number"]
             datos_track["uri"] = dato["track"]["uri"]
             datos_tracks.append(datos_track)
     return datos_tracks
@@ -685,11 +703,11 @@ def normalizar_tracks_youtube(datos_desordenados: dict) -> list:
     datos_tracks: list = []
     for dato in datos_desordenados:
         datos_tracks.append(
-                {'nombre': dato['snippet']['title'],
+                {'name': dato['snippet']['title'],
                  'id': dato['id'],
-                 'artistas': dato['snippet']['videoOwnerChannelTitle'],
-                 'numero_track': dato['snippet']['position'],
-                 'uri': 'desconocido'
+                 'artists': dato['snippet']['videoOwnerChannelTitle'],
+                 'track_number': dato['snippet']['position'],
+                 'uri': "unknown"
                  }
         )
     return datos_tracks
@@ -796,8 +814,7 @@ def exportar_dict_a_csv(extension:str, usuario:str, mi_dict:dict, nombre:str) ->
 ### Funciones propias del analisis de atributos >>>>>>>>>>>>>>>>>>>>>>>>
 
 def analisis_de_playlist(usuario_actual: dict) -> None:
-    #Recibe los datos del usuario y selecciona una playlist de una lista para analizar
-    #Llama a las funciones necesarias para el analisis
+    """Si la playlist que eliges tiene tracks, te lleva a una funcion para analizarlas."""
     servidor, datos_playlists = playlist_segun_servidor(usuario_actual, False)
     if not datos_playlists:
         print(" Sin playlists no podemos realizar ningun analisis.")
@@ -805,24 +822,28 @@ def analisis_de_playlist(usuario_actual: dict) -> None:
     else:
         indice_playlist_elegida: int = seleccionar_playlist(usuario_actual, datos_playlists, servidor)
         if datos_playlists[indice_playlist_elegida]["cant_tracks"] == 0:
-            print("La playlist elegida esta vacia, no pudimos realizar un analisis.")
+            print(" La playlist elegida esta vacia, no pudimos realizar un analisis.")
             input("Presione Enter para volver al menu principal: ")
         else:
             realizar_analisis_playlist(usuario_actual, datos_playlists[indice_playlist_elegida], servidor)
+
 
 def analizar_track(track: dict, atributos_track: dict, spotify: object, atributos: list, servidor: str = 'spotify') -> None:
     # Recibe un dict con un track de Spotify
     # Le agrega a atributos_track los atributos de cada track
     if servidor == "spotify":
-        print(f"Analizando track {track['nombre']}...\n")
+        print(f"Analizando track {track['name']}...\n")
         analisis = spotify.track_audio_features(track['id'])
 
         for atrib in atributos:
             atributos_track[atrib] = getattr(analisis, atrib)
 
+
 def realizar_analisis_playlist (usuario_actual: dict, playlist_elegida: dict, servidor: str) -> None:
-    #Recibe datos de usuario y de la playlist a analizar atributos
-    #Guarda un csv con los atributos promediados
+    """
+    Pre: Recibe los datos del usuario, la playlist a analizar y la plataforma de donde viene.
+    Post: Guarda un csv con los atributos promediados.
+    """
     atributos_playlist: dict = {}
     atributos_track: dict = {}
     fecha = date.today()
@@ -1146,13 +1167,13 @@ def rejunte_letras(tracks: list, playlist: dict, servidor: str) -> str:
     if servidor == "spotify":
         # se busca las canciones de spotify directamente
         for cancioncita in tracks:
-            letra: str = extraer_letra(token_genius, cancioncita['nombre'], cancioncita["artistas"][0])     # Que pasa con los otros artistas?
+            letra: str = extraer_letra(token_genius, cancioncita['name'], cancioncita["artists"][0])     # Que pasa con los otros artistas?
             # se suman
             total_letrasas = total_letrasas + letra
     elif servidor == "youtube":
         for cancioncita in tracks:
             # aca hay que hacer una limpieza porque sino no da nada
-            cancion, artista = limpieza(cancioncita["nombre"], cancioncita["artistas"])
+            cancion, artista = limpieza(cancioncita["name"], cancioncita["artists"])
             letra: str = extraer_letra(token_genius, cancion, artista)
             total_letrasas = total_letrasas + letra
     return total_letrasas
@@ -1239,5 +1260,4 @@ def main() -> None:
                 terminar: bool = True
     else:
         vis.falta_archivo()
-
 main()
