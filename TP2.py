@@ -500,7 +500,7 @@ def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
     if (servidor == "youtube"):
         playlists: list = conseguir_datos_playlistsYT(plataforma)
     elif (servidor == "spotify"):
-        playlists: list = perf.datos_playlists_SP(plataforma, usuario_actual["id_usuario_youtube"])
+        playlists: list = perf.datos_playlists_SP(plataforma, usuario_actual["id_usuario_spotify"])
 
     """ if (len(usuario_actual[f'playlists_{servidor}']) == 0):
         lista_nombres.append("No hay ninguna lista para mostrar")
@@ -568,20 +568,44 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
         seleccion = input("Inválido. Vuelva a ingresar >>> ")
     seleccion = int(seleccion)
 
-    if servidor == "spotify" and seleccion>len(usuario_actual['playlists_spotify']):
-        print("Número de playlist ingresado inválido.")
-    elif servidor == "youtube" and seleccion>len(usuario_actual['playlists_youtube']):
+    # Recupero el cliente con el que trabajaré.
+    plataforma: object = usuario_actual[servidor]
+
+    # Obtengo las playlists según la plataforma.
+    if (servidor == "spotify"):
+        playlists: list = perf.datos_playlists_SP(plataforma, usuario_actual["id_usuario_spotify"])
+    elif (servidor == "youtube"):
+        playlists: list = conseguir_datos_playlistsYT(plataforma)
+
+    if (seleccion>len(playlists)):
         print("Número de playlist ingresado inválido.")
     else:
         permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
         while servidor == "spotify" and permisos and not permitido:
             print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
-            seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
+            seleccion = input_num_con_control(1,len(playlists)+1)
             permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
 
         mi_playlist['servidor'] = servidor
-        mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
-        mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id']
+        mi_playlist['name'] = playlists[seleccion - 1]['name']
+        mi_playlist['id'] = playlists[seleccion - 1]['id']
+
+
+
+    """  if servidor == "spotify" and seleccion>len(usuario_actual['playlists_spotify']):
+            print("Número de playlist ingresado inválido.")
+        elif servidor == "youtube" and seleccion>len(usuario_actual['playlists_youtube']):
+            print("Número de playlist ingresado inválido.")
+        else:
+            permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
+            while servidor == "spotify" and permisos and not permitido:
+                print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
+                seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
+                permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
+
+            mi_playlist['servidor'] = servidor
+            mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
+            mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id'] """
 
 
 def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
