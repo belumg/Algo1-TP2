@@ -83,7 +83,6 @@ def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str) -> 
                     esta = True
             if esta == False:
                 lista_a_agregar.append(lista_yutub[i])
-    print(lista_a_agregar)
     return lista_a_agregar
 
 
@@ -205,10 +204,8 @@ def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
         if nombre in lista_encontrados[i][1]:
             if artista in lista_encontrados[i][2]:
                 id.append(lista_encontrados[i][0])
-    print(id)
     if len(id) != 0:
         id_elejido = lista_encontrados[0][0]
-        print(id_elejido)
     else:
         lista_no_encontrados.append([nombre, artista])
         id_elejido = "no habemus nada"
@@ -264,7 +261,6 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
                              f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 3, ('track',))
         id: str = comparacion_con_search_youtube(search, lista_agregar[i][0], lista_agregar[i][1],
                                                  lista_no_agregado)
-        print(id)
         # se busca y se obtiene el id, si no hay ningun id el comparacion con search entrega un id con las palabras no habemus nada
         if id != "no habemus nada":
             # se agrega canción por canción
@@ -281,23 +277,24 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
     # limpio el search y si no se encontro se suma a los no encontrados.
     # es más posible que esto suceda ya que puede haber cosas en las listas de youtube que no es música
     lista_encontrados: list = []
+    urisueltos: list = []
     for x in search:
         for item in x.items:
             for artist in item.album.artists:
                 lista_encontrados.append([item.uri, item.name, artist.name])
         # verifico que sea esa cancion
     for i in range(len(lista_encontrados)):
-        if lista_encontrados[i][1] == nombre:
-            if lista_encontrados[i][2] == artista:
-                uris.append(lista_encontrados[i][0])
-                # como hay solo una cancion posible no tengo que preocuparme que agregue de mas
+        if lista_encontrados[i][2] in nombre or lista_encontrados[i][2] in artista:
+            urisueltos.append(lista_encontrados[i][0])
+    uris.append(urisueltos[0])
     for j in range(len(uris)):
         agrego: bool = False
         for k in range(len(lista_encontrados)):
             if uris[j] == lista_encontrados[k][0]:
                 agrego = True
-        if agrego == False:
-            lista_no_encontrados.append([nombre, artista])
+    if agrego == False:
+        lista_no_encontrados.append([nombre, artista])
+
 
 
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
@@ -349,7 +346,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     # uris de las canciones
     for i in range(len(lista_agregar)):
         search = buscar_item(spotify, youtube, "spotify",
-                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 1, ('track',))
+                             f"{lista_agregar[i][0]}, {lista_agregar[i][1]}", 5, ('track',))
 
         # acá voy agregando las uris de lo que encuentro
         comparacion_con_search_spotify(search, lista_agregar[i][0], lista_agregar[i][1], uris,
@@ -359,7 +356,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
         # esto es por si no hay uris, puede ser que no se encuentre nada
         agregar_cancion_a_spotify(playlist_id, uris, spotify)
     except tk.BadRequest:
-        print("Upsi! Ninguna canción de las que estaban en su lista fueron encontradas en Spotify")
+        print("Upsi! Alguna canción de las que estaban en su lista no fueron encontradas en Spotify")
 
     if not emergencia:
         no_se_pudo: dict = {}
@@ -618,9 +615,7 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
 
         mi_playlist['servidor'] = servidor
         mi_playlist['name'] = playlists[seleccion - 1]['name']
-        print(mi_playlist['name'])
         mi_playlist['id'] = playlists[seleccion - 1]['id']
-        print(mi_playlist['id'])
 
 
 
@@ -668,7 +663,6 @@ def normalizar_playlist_spotify(info_playlist:list, detalles:dict,
 def normalizar_playlist_youtube(info_playlist:list, detalles:dict, playlist_id:str, playlist_nombre:str) -> None:
     #Recibe los datos dados por la api en list info_playlist
     #Devuelve los datos con las keys asignadas en dict detalles
-    print(info_playlist)
     detalles['id'] = playlist_id
     detalles['name'] = playlist_nombre
     detalles['tracks'] = []
@@ -1176,7 +1170,6 @@ def listar_playlistsYT(youtube: object) -> dict:
     # Agrega nombre de playlist fuera de snippet >>>>>>>>>>>>>>>>>>>>>>
     for playlist in response['items']:
         playlist['name'] = playlist['snippet']['title']
-    print(response['items'])
     return response['items']
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
