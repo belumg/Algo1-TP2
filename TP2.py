@@ -1,19 +1,13 @@
 import matplotlib.pyplot as plt
 import cv2 as cv
 import tekore as tk
-from webbrowser import open as web_open
 from tekore import Spotify
 import requests
 from lyricsgenius import Genius
-import time
 import csv
 import os
 from datetime import date
 import json
-import google_auth_oauthlib.flow
-import google.auth.transport.requests
-import googleapiclient.discovery
-import googleapiclient.errors
 import youtube_dl
 import TP2_PERFILES as perf
 import TP2_VISUAL as vis
@@ -21,13 +15,13 @@ from unidecode import unidecode
 import re
 
 ###################################################################################################
-def input_num_con_control(min:int, max:int) -> int:
+
+def input_num_con_control(min: int, max: int) -> int:
     #Recibo el rango de opciones para un menu numerico
     #Devuelve una opción en ese rango como int
     seleccion = input("      >>>    ")
-    while not seleccion.isnumeric() or int(seleccion)>max or int(seleccion)<min:
+    while not seleccion.isnumeric() or int(seleccion) > max or int(seleccion) < min:
         seleccion = input("Inválido. Vuelva a ingresar >>> ")
-
     seleccion = int(seleccion)
     return seleccion
 
@@ -35,7 +29,6 @@ def input_num_con_control(min:int, max:int) -> int:
 ###################################################################################################
 
 #### Controlar que canciones ya están en la lista para no repetirlas >>>>>>>>>>>>>>>>>>>
-
 
 def lista_canciones(info_playlist: dict, lista_cancion: list, servidor: str) -> None:
     # Lista las canciones para poder comparar si hay alguna, para que no se repitan
@@ -87,7 +80,7 @@ def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str) -> 
 
 
 #### Parseo de titulos de canciones >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def limpieza_yutub(search: dict)->list:
+def limpieza_yutub(search: dict) -> list:
     print(search['items'])
     # cuando hay un search debo ordenar la información
     lista_encontrados: list = []
@@ -103,7 +96,7 @@ def limpieza_yutub(search: dict)->list:
     return lista_encontrados
 
 
-def limpieza(titulo: str, canal: str)->tuple:
+def limpieza(titulo: str, canal: str) -> tuple:
     # se intenta corregir los nombres que provienen de youtube ya que estos no son compatibles con spotify
     # cuando salen comillas normalmente es el nombre de la canción
     if "&#39;" in titulo:
@@ -189,7 +182,6 @@ def dame_id_playlist(spotify: object, token_youtube: object, user_id: str, nombr
             if i['snippet']['title'] == nombre:
                 playlist_id = i['id']
     return playlist_id
-
 
 ### ----------------------- SINCRONIZACIÓN SPOTIFY A YOUTUBE --------------------------------------
 ###################################################################################################
@@ -296,7 +288,6 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
         lista_no_encontrados.append([nombre, artista])
 
 
-
 def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
                                      playlist_yutub: dict,
                                      detalles_yutub: dict,  emergencia:bool= False) -> dict:
@@ -318,7 +309,7 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
     lista_canciones(detalles_yutub, lista_yutub, "youtube")
     opcion2: str = input("Quiere: \n [1] crear nueva playlist \n [2] realizarlo en una ya creada ")
     while opcion2 != "1" and opcion2 != "2":
-        opcion2 = input("solo hay dos opciones.")
+        opcion2 = input("Solo hay dos opciones: ")
     opcion2: int = int(opcion2)
     if opcion2 == 1:
         # creo la playlist de spotify
@@ -446,7 +437,6 @@ def mostrame_esta_imagen(usuario: str, id_playlist: str) -> None:
     cv.imwrite(f'wordcloud_{usuario}_{id_playlist}.jpg', img, [int(cv.IMWRITE_JPEG_QUALITY), 100])
     plt.imshow(img)
     plt.show()
-
 
 ### ----------------------- CREAR PLAYLISTS -------------------------------------------------------
 ###################################################################################################
@@ -629,7 +619,6 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
                 print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
                 seleccion = input_num_con_control(1,len(f'usuario_actual["playlists_{servidor}"]')+1)
                 permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
-
             mi_playlist['servidor'] = servidor
             mi_playlist['name'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['name']
             mi_playlist['id'] = usuario_actual[f"playlists_{servidor}"][seleccion - 1]['id'] """
@@ -983,7 +972,7 @@ def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
     artistas: str = ','.join(cancion['artists'])
 
     vis.mostrar_cancion(cancion, seleccion)
-    token_genius: str = ingreso_genius()
+    token_genius: str = perf.sacar_info_json("credenciales.json")["genius"]["token_genius"]
     letra: str = extraer_letra(token_genius, nombre, artistas)
     if letra == "":
         print("No se ha encontrado ninguna letra para esta canción.")
@@ -1018,7 +1007,7 @@ def visualizar_cancion(cancion: dict, seleccion: int, servidor:str) -> None:
         input("Presione una tecla para volver al menu >>> ")
 
 
-def administracion_de_canciones(usuario_actual:dict) -> None:
+def administracion_de_canciones(usuario_actual: dict) -> None:
     #Recibe datos de usuario
     #Mediante funciones auxiliares, busca canción en servidores
     #Ofrece visualizarla o agregarla a playlist
@@ -1028,7 +1017,7 @@ def administracion_de_canciones(usuario_actual:dict) -> None:
         "Visualizar", "Agregar a playlist"
     ]
 
-    servidor = seleccion_servidor()
+    servidor: str = seleccion_servidor()
     buscar_cancion(usuario_actual['spotify'], usuario_actual['youtube'], resultados, servidor)
     if len(resultados) > 0:
         print(f"""\n     Resultados de búsqueda""")
@@ -1053,17 +1042,8 @@ def administracion_de_canciones(usuario_actual:dict) -> None:
     else:
         print("No hemos obtenido ningún resultado de la búsqueda")
 
-
 ###------------------------- MANEJO DE LYRICS ------------------------------------------------------
 ####################################################################################################
-
-def ingreso_genius()->str:
-    with open("credencial_Genius.json") as f:
-        datos = json.load(f)
-    token: tuple = tuple(datos.values())
-    token_genius: str = token[0]
-    return token_genius
-
 
 def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
     # Recibe token de genius y datos de cancion (nombre y artista)
@@ -1082,8 +1062,8 @@ def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
         #Si queremos que el usuario busque el nombre de la canción manualmente
         es_cancion: bool = False
         while es_cancion == False:
-            cancion = input("Nombre del cantante:")
-            artista = input("Nombre de canción: ")
+            cancion: str = input("Nombre del cantante: ")
+            artista: str = input("Nombre de canción: ")
             song = genius.search_song(cancion, artista)
             print(song)
             print("¿Es la canción que usted busca? "
@@ -1112,7 +1092,7 @@ def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
 def rejunte_letras(detalles: dict, servidor: str) -> str:
     total_letrasas: str = ""
     # se recibe el token
-    token_genius = ingreso_genius()
+    token_genius: str = perf.sacar_info_json("credenciales.json")["genius"]["token_genius"]
     if servidor == "spotify":
         # se busca las canciones de spotify directamente
         for cancioncita in range(len(detalles['tracks'])):
@@ -1135,7 +1115,7 @@ def rejunte_letras(detalles: dict, servidor: str) -> str:
 
 def playlists_spotify(spotify, id_usuario) -> None:
     """ Recupera la información de las playlists de Spotify de un usuario """
-    datos_playlists = spotify.playlists(id_usuario)
+    datos_playlists = spotify.playlists(id_usuario, 50)
     nombres = [x.name for x in datos_playlists.items]
     if nombres:
         vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
@@ -1177,11 +1157,11 @@ def listar_playlistsYT(youtube: object) -> dict:
 def obtener_credYT(nombre: str) -> dict:
     """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
     diccionario vacío"""
-    if not os.path.isfile("datos_perfiles.json"):
-        return {}
-    with open("datos_perfiles.json") as f:
-        datos = json.load(f)
-    return datos[nombre]["youtube"]
+    credenciales: dict = {}
+    if os.path.isfile("datos_perfiles.json"):
+        datos: dict = perf.sacar_info_json("datos_perfiles.json")
+        credenciales: dict = datos[nombre]["youtube"]
+    return credenciales
 
 def conseguir_datos_playlistsYT(youtube: object) -> list:
     """ Consigue el id, nombre, descripción y estado (publica o privada) de todas las playlists 
@@ -1196,7 +1176,6 @@ def conseguir_datos_playlistsYT(youtube: object) -> list:
         diccionario["description"] = data_response[i]["snippet"]["description"]
         lista_dicc_playlistsYT.append(diccionario)
     return lista_dicc_playlistsYT
-
 
 #### ----------------------------- AUTENTICACIÓN YOUTUBE ------------------------------------------
 ###################################################################################################
@@ -1214,34 +1193,13 @@ def id_canal_youtube(youtube:object) -> None:
 ####################################################################################################
 ####################################################################################################
 
-def estan_archivos():
-    """Devuelve True si encuentra los 2 archivos donde estan las credenciales que necesitamos, caso contrario devuelve False."""
-    if not os.path.isfile("credenciales_YT.json"):
-        vis.falta_archivo("YT")
-        return False
-    elif not os.path.isfile("credenciales_SP.json"):
-        vis.falta_archivo("SP")
-        return False
-    return True
-
-
-def conseguir_credenciales_spotify() -> tuple:
-    """ Recupera las credenciales para autenticarse en Spotify """
-    with open("credenciales_SP.json") as f:
-        datos = json.load(f)
-    return tuple(datos.values())
-
-####################################################################################################
-####################################################################################################
-
 def main() -> None:
-    if estan_archivos():
+    if os.path.isfile("credenciales.json"):
         vis.inicio()
-        credenciales_spotify: tuple = conseguir_credenciales_spotify()
         usuario_actual: dict = {"username": ""}
-        perf.manejo_perfiles(usuario_actual, credenciales_spotify)
+        perf.manejo_perfiles(usuario_actual)
         terminar: bool = True
-        if perf.datos_agregados_correctamente(usuario_actual, credenciales_spotify):
+        if perf.datos_agregados_correctamente(usuario_actual):
             terminar: bool = False
         while not terminar:
             print(vis.MENU)
@@ -1267,10 +1225,12 @@ def main() -> None:
                 wordcloud(usuario_actual, usuario_actual['spotify'], usuario_actual['youtube'])
             elif seleccion == 7:
                 #Cambiar de perfil
-                perf.manejo_perfiles(usuario_actual, credenciales_spotify)
-                if not perf.datos_agregados_correctamente(usuario_actual, credenciales_spotify):
-                    terminar: bool = True
+                perf.manejo_perfiles(usuario_actual)
+                if "spotify" not in usuario_actual:    # Si no esta entonces el usuario cambio.
+                    if not perf.datos_agregados_correctamente(usuario_actual):
+                        terminar: bool = True
             else:
                 terminar: bool = True
-
+    else:
+        vis.falta_archivo()
 main()
