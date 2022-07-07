@@ -560,7 +560,6 @@ def playlist_segun_servidor(usuario_actual: dict) -> str:
         print_playlists_de_user(usuario_actual, "spotify")
         print_playlists_de_user(usuario_actual, "youtube")
         servidor: str = "unknown"
-    input(" Presione Enter para continuar: ")
     return servidor
 
 
@@ -591,11 +590,11 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
     # Devuelve mi_playlist con servidor, nombre y id de playlist
 
     permitido : bool = False
-    print("Seleccione una playlist ")
+    """ print("Seleccione una playlist ")
     seleccion = input("    >>> ")
     while not seleccion.isnumeric() or int(seleccion)<1:
         seleccion = input("Inválido. Vuelva a ingresar >>> ")
-    seleccion = int(seleccion)
+    seleccion = int(seleccion) """
 
     # Recupero el cliente con el que trabajaré.
     plataforma: object = usuario_actual[servidor]
@@ -607,9 +606,12 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
         elif (servidor == "youtube"):
             playlists: list = conseguir_datos_playlistsYT(plataforma)
 
-        if (seleccion>len(playlists)):
-            print("Número de playlist ingresado inválido.")
+        """ if (seleccion>len(playlists)):
+            print("Número de playlist ingresado inválido.") """
+        if (len(playlists) == 0):
+            print("No hay playlists guardadas en esta plataforma")
         else:
+            seleccion: int = input_num_con_control(1, len(playlists))
             permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
             while servidor == "spotify" and permisos and not permitido:
                 print("No puede modificar esa playlist. Elija una suya o que sea colaborativa.")
@@ -775,40 +777,44 @@ def realizar_analisis_playlist (usuario_actual:dict, mi_playlist:dict) -> None:
         'valence', 'tempo', 'duration_ms', 'instrumentalness', 'speechiness'
     ]
 
-    if mi_playlist['servidor'] == "spotify":
-        importar_playlist(usuario_actual['spotify'], usuario_actual['youtube'], mi_playlist['id'],
-                          mi_playlist['name'], mi_playlist['servidor'], detalles_playlist)
-        for track in detalles_playlist['tracks']:
-            try:
-                analizar_track(track, atributos_track, usuario_actual['spotify'], atributos)
-                for key,value in atributos_track.items():
-                    if atributos_playlist == {} and key not in atributos_playlist.keys():
-                        atributos_playlist['fecha de analisis'] = fecha
-                        atributos_playlist['id'] = detalles_playlist['id']
-                        atributos_playlist['playlist name'] = detalles_playlist['name'].encode()
-                        atributos_playlist[key] = value
-                    elif key not in atributos_playlist.keys():
-                        atributos_playlist[key] = value
-                    else:
-                        atributos_playlist[key] += value
-                exportar_dict_a_csv('csv', usuario_actual['username'], atributos_playlist,
-                                    mi_playlist['id'])
-            except TimeoutError:
-                print(vis.NO_INTERNET)
+    if (mi_playlist != {}):
+        # Corroboro que el diccionario con la data de la playlist no esté vacío (no hay playlist en una plataforma)
+        if mi_playlist['servidor'] == "spotify":
+            importar_playlist(usuario_actual['spotify'], usuario_actual['youtube'], mi_playlist['id'],
+                            mi_playlist['name'], mi_playlist['servidor'], detalles_playlist)
+            for track in detalles_playlist['tracks']:
+                try:
+                    analizar_track(track, atributos_track, usuario_actual['spotify'], atributos)
+                    for key,value in atributos_track.items():
+                        if atributos_playlist == {} and key not in atributos_playlist.keys():
+                            atributos_playlist['fecha de analisis'] = fecha
+                            atributos_playlist['id'] = detalles_playlist['id']
+                            atributos_playlist['playlist name'] = detalles_playlist['name'].encode()
+                            atributos_playlist[key] = value
+                        elif key not in atributos_playlist.keys():
+                            atributos_playlist[key] = value
+                        else:
+                            atributos_playlist[key] += value
+                    exportar_dict_a_csv('csv', usuario_actual['username'], atributos_playlist,
+                                        mi_playlist['id'])
+                except TimeoutError:
+                    print(vis.NO_INTERNET)
 
-        if os.path.isfile(f"analisis_{mi_playlist['id']}_de_{usuario_actual['username']}.csv"):
-            print(f"Se ha creado un archivo con los atributos de la playlist {atributos_playlist['playlist name']} \n"
-                  f"en el directorio {os.getcwd()}")
+            if os.path.isfile(f"analisis_{mi_playlist['id']}_de_{usuario_actual['username']}.csv"):
+                print(f"Se ha creado un archivo con los atributos de la playlist {atributos_playlist['playlist name']} \n"
+                    f"en el directorio {os.getcwd()}")
+            else:
+                print("Ha habido un error al generar el archivo. Intentelo nuevamente.")
+
         else:
-            print("Ha habido un error al generar el archivo. Intentelo nuevamente.")
-
+            print("No podemos realizar un analisis de atributos musicales para"
+                " playlists en youtube.") #Youtube Music API when ??
+            print("Podemos sincronizar con spotify y realizar el analisis de las canciones que estén en esa plataforma.")
+            sincronizar:str = input("- [S] aceptar \n- Cualquier [Tecla] volver\n     >>>   ").lower()
+            if sincronizar == "s":
+                sincronizacion_de_emergencia(usuario_actual, mi_playlist)
     else:
-        print("No podemos realizar un analisis de atributos musicales para"
-              " playlists en youtube.") #Youtube Music API when ??
-        print("Podemos sincronizar con spotify y realizar el analisis de las canciones que estén en esa plataforma.")
-        sincronizar:str = input("- [S] aceptar \n- Cualquier [Tecla] volver\n     >>>   ").lower()
-        if sincronizar == "s":
-            sincronizacion_de_emergencia(usuario_actual, mi_playlist)
+        print("No se pudo realizar el análisis de la playlist")
 
 
 def sincronizacion_de_emergencia(usuario_actual:dict, mi_playlist:dict) -> None:
@@ -1140,17 +1146,6 @@ def rejunte_letras(detalles: dict, servidor: str) -> str:
 ###------------------------- LISTADO DE PLAYLISTS  -------------------------------------------------
 ####################################################################################################
 
-
-""" def playlists_spotify(spotify, id_usuario) -> None:
-    # Recupera la información de las playlists de Spotify de un usuario
-    datos_playlists = spotify.playlists(id_usuario, 50)
-    nombres = [x.name for x in datos_playlists.items]
-    if nombres:
-        vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
-    else:
-        print(vis.NO_PLAYLIST) """
-
-
 def listar_playlistsYT(youtube: object) -> dict:
     """ Recupera la data de todas las playlists que tiene un usuario en Youtube """
     request = youtube.playlists().list(
@@ -1182,14 +1177,6 @@ def listar_playlistsYT(youtube: object) -> dict:
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
-""" def obtener_credYT(nombre: str) -> dict:
-    # Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
-    # diccionario vacío
-    credenciales: dict = {}
-    if os.path.isfile("datos_perfiles.json"):
-        datos: dict = perf.sacar_info_json("datos_perfiles.json")
-        credenciales: dict = datos[nombre]["youtube"]
-    return credenciales """
 
 def conseguir_datos_playlistsYT(youtube: object) -> list:
     """ Consigue el id, nombre, descripción y estado (publica o privada) de todas las playlists 
@@ -1204,19 +1191,6 @@ def conseguir_datos_playlistsYT(youtube: object) -> list:
         diccionario["description"] = data_response[i]["snippet"]["description"]
         lista_dicc_playlistsYT.append(diccionario)
     return lista_dicc_playlistsYT
-
-#### ----------------------------- AUTENTICACIÓN YOUTUBE ------------------------------------------
-###################################################################################################
-
-""" def id_canal_youtube(youtube:object) -> None:
-    # Retorna el identificador de un canal de Youtube (ID)
-    request = youtube.channels().list(
-            part= "id",
-            mine= True
-            )
-    response = request.execute()["items"] #Devuelve una lista con la información del canal.
-    id_YT: str = response[0]["id"]
-    return id_YT """
 
 ####################################################################################################
 ####################################################################################################
@@ -1237,6 +1211,7 @@ def main() -> None:
             if seleccion == 1:
                 #Listar las playlist
                 playlist_segun_servidor(usuario_actual)
+                input(" Presione Enter para continuar: ")
             elif seleccion == 2:
                 #Exportar analisis de playlist a CSV
                 analisis_de_playlist(usuario_actual)
