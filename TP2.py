@@ -822,7 +822,7 @@ def buscar_cancion(spotify: object, token_youtube: str, resultados: list, servid
     # ]
 
     cancion = input("Ingrese el nombre de la canción a buscar >>> ")
-    artista = input("Ingrese el artista >>> ")
+    artista = input("Ingrese el artista (opcional) >>> ")
     search = buscar_item(spotify, token_youtube, servidor, f"{cancion} {artista}", 3, ('track', ))
 
     if servidor == "spotify":
@@ -878,19 +878,23 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
 
 def agregar_cancion_a_youtube(playlist_id: str, cancion_id: str, youtube: object) -> None:
     #Agrega una canción a youtube
-    request = youtube.playlistItems().insert(
-        part="snippet",
-        body={
-            "snippet": {
-                "playlistId": playlist_id,
-                "resourceId": {
-                    "kind": "youtube#video",
-                    "videoId": cancion_id
+    try:
+        request = youtube.playlistItems().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "playlistId": playlist_id,
+                    "resourceId": {
+                        "kind": "youtube#video",
+                        "videoId": cancion_id
+                    }
                 }
             }
-        }
-    )
-    response = request.execute()
+        )
+        response = request.execute()
+        print("Canción agregada correctamente")
+    except TimeoutError:
+        print(vis.NO_INTERNET)
 
 
 def agregar_a_playlist(usuario_actual:dict, cancion:dict, servidor:str) -> None:
@@ -1017,10 +1021,11 @@ def administracion_de_canciones(usuario_actual: dict) -> None:
 ####################################################################################################
 
 def extraer_letra(token_genius, cancion: str = "0", artista: str = "0") -> str:
+    letra_song: str = ""
+    ser_o_no_ser: str = "para la proxima api de musixmatch"
     # Recibe token de genius y datos de cancion (nombre y artista)
     # Devuelve la letra, si no la encuentra devuelve str = ""
     # Si no recibe nombre ni artista, el usuario los ingresa manualmente
-    ser_o_no_ser: str = "aun no paso nada"
     genius = Genius(token_genius)
     # saca los headers
     genius.remove_section_headers = True
