@@ -275,3 +275,28 @@ PLAYLIST_CREADA: str = """
       [PLAYLIST CREADA EXITOSAMENTE]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 """
+
+
+USUARIO_NO_PERMITIDO: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+
+         [ERROR CON LOS PERMISOS]
+                                          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+      Su cuenta de Spotify no cuenta  
+         con el permiso para usar         COMUNICATE CON LOS DESARROLLADORES    
+             esta aplicacion.             
+                                          ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+
+ERROR_DESCONOCIDO: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+
+          [ERROR: DESCONOCIDO]       
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+- Comunicate con los desarrolladores.
+- Mandales una foto del problema que aparece abajo.
+"""
