@@ -154,7 +154,12 @@ def spotify_vs_youtube(usuario_actual: dict):
     if len(no_se_pudo['no se pudo']) != 0:
         print("Hay canciones que no lo lograron y murieron en el intento, \n"
               "le recomiento ver en su carpeta con el archivo csv ")
-        exportar_dict_a_csv("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
+        try:
+            exportar_dict_a_csv("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
+        except UnicodeEncodeError:
+            print("Sus letras tienen un codigo malo, muy malo\n"
+                  "csv no lo soporta, le dejo la lista acá impresa ")
+            print(no_se_pudo['no se pudo'])
     else:
         print("HABEMUS UN GANADOR, USTED PASO TODAS SUS CANCIONES CORRECTAMENTE")
     print("Ahora puede elegir otra opción en el programa")
@@ -184,8 +189,8 @@ def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
 def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
                                       playlist_yutub: dict, detalles_yutub: dict) -> dict:
     # DE SPOTIFAI AL YUTUB
-    terminar: bool =False
-    while terminar==False:
+    terminar: bool = False
+    while terminar == False:
         lista_spotifai: list = []
         print_playlists_de_user(usuario_actual, "spotify")
         spotify: object = usuario_actual['spotify']
@@ -198,16 +203,11 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
         lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
         if len(lista_spotifai)==0:
             print("JA! Que gracioso, eligio una playlist sin nada que pasar"
-                  "\n tiene dos opciones"
-                  "[1] Volver a elegir"
-                  "[2] 'Me arrepiento y quiero salir'")
-            quere: str = input(">>>>")
-            if quere==1:
-                terminar == False
-            else:
-                terminar ==True
+                  "\n tiene que volver a elegir"
+                  )
+            terminar = False
         else:
-            terminar==True
+            terminar = True
     # ahora tengo que saber si quiere crear una nueva o no
     opcion2: str = input("Quiere: \n [1] crear nueva playlist \n [2] realizarlo en una ya creada ")
     while opcion2 != "1" and opcion2 != "2":
@@ -280,21 +280,31 @@ def sincronizacion_youtube_a_spotify(usuario_actual: dict, playlist_spotifai: di
                                      playlist_yutub: dict,
                                      detalles_yutub: dict,  emergencia:bool= False) -> dict:
     # A ESTE PUNTO LA PROGRAMADORA SE ESTA PREGUNTANDO SI ES BUENA IDEA SEGUIR VIVIENDO
-    playlist_id: str = ""
-    lista_yutub: list = []
-    spotify: object = usuario_actual['spotify']
-    youtube: object = usuario_actual['youtube']
-    user_id_spotifai: str = usuario_actual['id_usuario_spotify']
-    # youtube a spotify
-    if not emergencia:
-        print_playlists_de_user(usuario_actual, "youtube")
-        seleccionar_playlist(usuario_actual, playlist_yutub, "youtube")
+    terminar: bool = False
+    while terminar == False:
+        playlist_id: str = ""
+        lista_yutub: list = []
+        spotify: object = usuario_actual['spotify']
+        youtube: object = usuario_actual['youtube']
+        user_id_spotifai: str = usuario_actual['id_usuario_spotify']
+        # youtube a spotify
+        if not emergencia:
+            print_playlists_de_user(usuario_actual, "youtube")
+            seleccionar_playlist(usuario_actual, playlist_yutub, "youtube")
 
-    # recibo la informacion de la lista elegida
-    importar_playlist(spotify, youtube, playlist_yutub['id'], playlist_yutub['name'],
-                      "youtube", detalles_yutub)
-    # busco las canciones en la lista que eleji de youtube
-    lista_canciones(detalles_yutub, lista_yutub, "youtube")
+        # recibo la informacion de la lista elegida
+        importar_playlist(spotify, youtube, playlist_yutub['id'], playlist_yutub['name'],
+                          "youtube", detalles_yutub)
+        # busco las canciones en la lista que eleji de youtube
+        lista_canciones(detalles_yutub, lista_yutub, "youtube")
+        if len(lista_yutub)==0:
+            print("JA! Que gracioso, eligio una playlist sin nada que pasar"
+                  "\n tiene que volver a elegir"
+                  )
+            terminar = False
+        else:
+            terminar = True
+
     opcion2: str = input("Quiere: \n [1] crear nueva playlist \n [2] realizarlo en una ya creada ")
     while opcion2 != "1" and opcion2 != "2":
         opcion2 = input("Solo hay dos opciones: ")
@@ -934,7 +944,6 @@ def agregar_cancion_a_youtube(playlist_id: str, cancion_id: str, youtube: object
             }
         )
         response = request.execute()
-        print("Canción agregada correctamente")
     except TimeoutError:
         print(vis.NO_INTERNET)
 
