@@ -1,4 +1,3 @@
-import httpx
 import matplotlib.pyplot as plt
 import cv2 as cv
 import tekore as tk
