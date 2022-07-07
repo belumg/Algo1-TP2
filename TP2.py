@@ -251,7 +251,7 @@ def comparacion_con_search_spotify(search: tuple, nombre: str, artista: str, uri
         if lista_encontrados[i][2] in nombre or lista_encontrados[i][2] in artista:
             urisueltos.append(lista_encontrados[i][0])
     if len(urisueltos) != 0:
-        uris.append(urisueltos[0])   
+        uris.append(urisueltos[0])
     for j in range(len(uris)):
         for k in range(len(lista_encontrados)):
             if uris[j] == lista_encontrados[k][0]:
@@ -521,7 +521,7 @@ def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
 def playlist_segun_servidor(usuario_actual: dict) -> str:
     #Recibe la información de usuario
     #Devuelve el nombre del servidor en el que elige trabajar el usuario
-    vis.youtube_spotify(mostar_ambas=True)
+    vis.youtube_spotify(mostrar_ambas=True)
     seleccion = input_num_con_control(1,3)
     if seleccion == 1:
         print_playlists_de_user(usuario_actual, "youtube")
@@ -1177,6 +1177,8 @@ def main() -> None:
         terminar: bool = True
         if perf.datos_agregados_correctamente(usuario_actual):
             terminar: bool = False
+        else:
+            print(vis.SIN_DATOS)
         while not terminar:
             print(vis.MENU)
             seleccion: int = input_num_con_control(0, 7)
@@ -1209,4 +1211,5 @@ def main() -> None:
                 terminar: bool = True
     else:
         vis.falta_archivo()
+
 main()
