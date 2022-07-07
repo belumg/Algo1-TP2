@@ -1,3 +1,4 @@
+import httpx
 import matplotlib.pyplot as plt
 import cv2 as cv
 import tekore as tk
@@ -397,10 +398,12 @@ def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> N
     # realmente toma mucho tiempo si es larga la playlist
     print("Esto va a tomar un tiempo, por favor imagine musica de ascensor\n"
           "tu tuutututut tuut utututu")
-    letra_total = rejunte_letras(detalles, servidor)
+
     try:
+        letra_total = rejunte_letras(detalles, servidor)
         al_wordcloud(letra_total, usuario_actual['username'], mi_playlist['id'])
         mostrame_esta_imagen(usuario_actual['username'], mi_playlist['id'])
+        print("Tuki! Ahí la tiene")
     except:
         # esto se arreglará para la reentrega
         # perdón guido salieron mil errores no supe cual era el correcto
@@ -908,6 +911,14 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
                     terminar: bool = True
                 else:
                     terminar: bool = False
+            except httpx.ConnectError:
+                print(vis.NO_INTERNET)
+                print(" Necesitamos internet para acceder a los datos de su perfil.")
+                intentar: str = ("Desea intentarlo de nuevo(si/no)?  ")
+                if intentar == "no":
+                    terminar: bool = True
+                else:
+                    terminar: bool = False
     elif servidor == "youtube":
         terminar: bool = False
         # cambiando el tipo podemos buscar playlists, albums, artistas, etc
@@ -923,6 +934,14 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
                 search = search.execute()
                 terminar = True
             except TimeoutError:
+                print(vis.NO_INTERNET)
+                print(" Necesitamos internet para acceder a los datos de su perfil.")
+                intentar: str = ("Desea intentarlo de nuevo(si/no)?  ")
+                if intentar == "no":
+                    terminar: bool = True
+                else:
+                    terminar: bool = False
+            except httpx.ConnectError:
                 print(vis.NO_INTERNET)
                 print(" Necesitamos internet para acceder a los datos de su perfil.")
                 intentar: str = ("Desea intentarlo de nuevo(si/no)?  ")
