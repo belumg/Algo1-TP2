@@ -911,14 +911,6 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
                     terminar: bool = True
                 else:
                     terminar: bool = False
-            except httpx.ConnectError:
-                print(vis.NO_INTERNET)
-                print(" Necesitamos internet para acceder a los datos de su perfil.")
-                intentar: str = ("Desea intentarlo de nuevo(si/no)?  ")
-                if intentar == "no":
-                    terminar: bool = True
-                else:
-                    terminar: bool = False
     elif servidor == "youtube":
         terminar: bool = False
         # cambiando el tipo podemos buscar playlists, albums, artistas, etc
@@ -941,15 +933,6 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
                     terminar: bool = True
                 else:
                     terminar: bool = False
-            except httpx.ConnectError:
-                print(vis.NO_INTERNET)
-                print(" Necesitamos internet para acceder a los datos de su perfil.")
-                intentar: str = ("Desea intentarlo de nuevo(si/no)?  ")
-                if intentar == "no":
-                    terminar: bool = True
-                else:
-                    terminar: bool = False
-
 
     return search
 
