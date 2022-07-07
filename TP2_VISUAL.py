@@ -157,14 +157,6 @@ def visual_lista_elementos(lista_mostrar: list, mensaje: str, enumerar: bool) ->
         input(" Presione Enter para volver al menu: ")
 
 
-NO_PLAYLIST :str = """
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-        No se encontraron playlists   
-         guardadas en esta cuenta.
-    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-"""
-
-
 def mostrar_cancion(cancion: dict, orden: int, titulo: str = "") -> None:
     print(f"""     {titulo}
         ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -279,7 +271,6 @@ PLAYLIST_CREADA: str = """
 
 USUARIO_NO_PERMITIDO: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-
          [ERROR CON LOS PERMISOS]
                                           ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
       Su cuenta de Spotify no cuenta  
@@ -292,11 +283,8 @@ USUARIO_NO_PERMITIDO: str = """
 
 ERROR_DESCONOCIDO: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-
           [ERROR: DESCONOCIDO]       
-
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
 - Comunicate con los desarrolladores.
 - Mandales una foto del problema que aparece abajo.
 """
@@ -315,3 +303,14 @@ SIN_DATOS: str = """
 ⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠛⠁⣰⣿⣿
 ⣿⣿⣿⣿⣿⣷⣦⣤⣤⣤⣤⣄⣀⣀⣀⣀⣀⣠⣤⣤⣤⣾⣿⣿⣿
 """
+
+
+def no_playlist(plataforma: str): 
+    """Imprime el mensaje de que el usuario no tiene playlists en la plataforma recibida."""
+    plataforma: str = plataforma.upper()
+    print(f"""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+          NO TIENES PLAYLISTS EN         
+          LA PLATAFORMA: {plataforma}     
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+""")
