@@ -1141,14 +1141,14 @@ def rejunte_letras(detalles: dict, servidor: str) -> str:
 ####################################################################################################
 
 
-def playlists_spotify(spotify, id_usuario) -> None:
-    """ Recupera la información de las playlists de Spotify de un usuario """
+""" def playlists_spotify(spotify, id_usuario) -> None:
+    # Recupera la información de las playlists de Spotify de un usuario
     datos_playlists = spotify.playlists(id_usuario, 50)
     nombres = [x.name for x in datos_playlists.items]
     if nombres:
         vis.visual_lista_elementos(nombres, "Playlists de Spotify", True)
     else:
-        print(vis.NO_PLAYLIST)
+        print(vis.NO_PLAYLIST) """
 
 
 def listar_playlistsYT(youtube: object) -> dict:
@@ -1182,14 +1182,14 @@ def listar_playlistsYT(youtube: object) -> dict:
 
 #### ----------------------------- AGREGAR DATOS DE SPOTIFY AL PERFIL -----------------------------
 ###################################################################################################
-def obtener_credYT(nombre: str) -> dict:
-    """ Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
-    diccionario vacío"""
+""" def obtener_credYT(nombre: str) -> dict:
+    # Devuelve las credenciales del nombre indicado. En caso de no encontrarlas, devuelve un 
+    # diccionario vacío
     credenciales: dict = {}
     if os.path.isfile("datos_perfiles.json"):
         datos: dict = perf.sacar_info_json("datos_perfiles.json")
         credenciales: dict = datos[nombre]["youtube"]
-    return credenciales
+    return credenciales """
 
 def conseguir_datos_playlistsYT(youtube: object) -> list:
     """ Consigue el id, nombre, descripción y estado (publica o privada) de todas las playlists 
@@ -1208,15 +1208,15 @@ def conseguir_datos_playlistsYT(youtube: object) -> list:
 #### ----------------------------- AUTENTICACIÓN YOUTUBE ------------------------------------------
 ###################################################################################################
 
-def id_canal_youtube(youtube:object) -> None:
-    """ Retorna el identificador de un canal de Youtube (ID) """
+""" def id_canal_youtube(youtube:object) -> None:
+    # Retorna el identificador de un canal de Youtube (ID)
     request = youtube.channels().list(
             part= "id",
             mine= True
             )
     response = request.execute()["items"] #Devuelve una lista con la información del canal.
     id_YT: str = response[0]["id"]
-    return id_YT
+    return id_YT """
 
 ####################################################################################################
 ####################################################################################################
