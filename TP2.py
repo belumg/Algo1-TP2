@@ -80,7 +80,6 @@ def comparacion(lista_yutub: list, lista_spotifai: list, servicio_base: str) -> 
 
 #### Parseo de titulos de canciones >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 def limpieza_yutub(search: dict) -> list:
-    print(search['items'])
     # cuando hay un search debo ordenar la información
     lista_encontrados: list = []
     for i in search['items']:
@@ -153,9 +152,13 @@ def spotify_vs_youtube(usuario_actual: dict):
                                          playlist_yutub, detalles_yutub)
     # si hay algo en el dict de no se pudo se exporta a csv sino un cartel
     if len(no_se_pudo['no se pudo']) != 0:
+        print("Hay canciones que no lo lograron y murieron en el intento, \n"
+              "le recomiento ver en su carpeta con el archivo csv ")
         exportar_dict_a_csv("csv", usuario_actual['username'], no_se_pudo, "no se pudo")
     else:
         print("HABEMUS UN GANADOR, USTED PASO TODAS SUS CANCIONES CORRECTAMENTE")
+    print("Ahora puede elegir otra opción en el programa")
+
 
 ### ----------------------- SINCRONIZACIÓN SPOTIFY A YOUTUBE --------------------------------------
 ###################################################################################################
@@ -181,16 +184,30 @@ def comparacion_con_search_youtube(search: tuple, nombre: str, artista: str,
 def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: dict, detalles_spotifai: dict,
                                       playlist_yutub: dict, detalles_yutub: dict) -> dict:
     # DE SPOTIFAI AL YUTUB
-    lista_spotifai: list = []
-    print_playlists_de_user(usuario_actual, "spotify")
-    spotify: object = usuario_actual['spotify']
-    youtube: object = usuario_actual['youtube']
-    seleccionar_playlist(usuario_actual, playlist_spotifai, "spotify")
-    # recibo la informacion de la lista elegida
-    importar_playlist(spotify, youtube, playlist_spotifai['id'],
-                      playlist_spotifai['name'],
-                      "spotify", detalles_spotifai)
-    lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
+    terminar: bool =False
+    while terminar==False:
+        lista_spotifai: list = []
+        print_playlists_de_user(usuario_actual, "spotify")
+        spotify: object = usuario_actual['spotify']
+        youtube: object = usuario_actual['youtube']
+        seleccionar_playlist(usuario_actual, playlist_spotifai, "spotify")
+        # recibo la informacion de la lista elegida
+        importar_playlist(spotify, youtube, playlist_spotifai['id'],
+                          playlist_spotifai['name'],
+                          "spotify", detalles_spotifai)
+        lista_canciones(detalles_spotifai, lista_spotifai, "spotify")
+        if len(lista_spotifai)==0:
+            print("JA! Que gracioso, eligio una playlist sin nada que pasar"
+                  "\n tiene dos opciones"
+                  "[1] Volver a elegir"
+                  "[2] 'Me arrepiento y quiero salir'")
+            quere: str = input(">>>>")
+            if quere==1:
+                terminar == False
+            else:
+                terminar ==True
+        else:
+            terminar==True
     # ahora tengo que saber si quiere crear una nueva o no
     opcion2: str = input("Quiere: \n [1] crear nueva playlist \n [2] realizarlo en una ya creada ")
     while opcion2 != "1" and opcion2 != "2":
@@ -209,7 +226,6 @@ def sincronizacion_spotify_a_youtube(usuario_actual: dict, playlist_spotifai: di
         print_playlists_de_user(usuario_actual, "youtube")
         seleccionar_playlist(usuario_actual, playlist_yutub, "youtube", True)
         # recibo la informacion de la lista elegida
-        print(playlist_yutub)
         importar_playlist(spotify, youtube, playlist_yutub['id'], playlist_yutub['name'],
                           "youtube", detalles_yutub)
         playlist_id: str = detalles_yutub['id']
@@ -876,17 +892,43 @@ def buscar_item(spotify:object, token_youtube:object, servidor:str, query:str, l
     #Recibe objetos de las app, los datos de busqueda como query, maximo de resultados como limit
     #Devuelve search con los resultados de la busqueda en la api
     if servidor == "spotify":
+        terminar: bool = False
         # cambiando el tipo podemos buscar playlists, albums, artistas, etc
-        search = spotify.search(query, types=types, market=None, include_external=None, limit=limit, offset=0)
+        while terminar==False:
+            try:
+                search = spotify.search(query, types=types, market=None, include_external=None, limit=limit, offset=0)
+                terminar = True
+            except TimeoutError:
+                print(vis.NO_INTERNET)
+                print(" Necesitamos internet para acceder a los datos de su perfil.")
+                intentar: str = ("Desea intentarlo de nuevo(si/no)?  ")
+                if intentar == "no":
+                    terminar: bool = True
+                else:
+                    terminar: bool = False
     elif servidor == "youtube":
-        youtube = token_youtube
-        search = youtube.search().list(
-            part="id, snippet",
-            maxResults=limit,
-            order="relevance",
-            q=query
-        )
-        search = search.execute()
+        terminar: bool = False
+        # cambiando el tipo podemos buscar playlists, albums, artistas, etc
+        while terminar == False:
+            try:
+                youtube = token_youtube
+                search = youtube.search().list(
+                    part="id, snippet",
+                    maxResults=limit,
+                    order="relevance",
+                    q=query
+                )
+                search = search.execute()
+                terminar = True
+            except TimeoutError:
+                print(vis.NO_INTERNET)
+                print(" Necesitamos internet para acceder a los datos de su perfil.")
+                intentar: str = ("Desea intentarlo de nuevo(si/no)?  ")
+                if intentar == "no":
+                    terminar: bool = True
+                else:
+                    terminar: bool = False
+
 
     return search
 
