@@ -58,7 +58,7 @@ def menu_perfiles(perfil: str) -> None:
     """)
 
 
-def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = [], mostar_ambas: bool = False) -> None:
+def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = [], mostrar_ambas: bool = False) -> None:
     """
     Pre: Recibe 2 bool y una lista.
     Post: Imprime un menu que tiene 3 valores que variaran segun los datos recibidos por parametro.
@@ -74,7 +74,7 @@ def youtube_spotify(crear_perfil: bool = False, opciones_elegidas: list = [], mo
         if 2 in opciones_elegidas: spotify: str = "--> Permisos aceptados"
     elif crear_perfil and not opciones_elegidas:
         mensaje: str = "No crear perfil"
-    elif mostar_ambas:
+    elif mostrar_ambas:
         mensaje: str = "Mostrar ambas"
     else:
         mensaje: str = "Volver al menu"
@@ -274,4 +274,44 @@ PLAYLIST_CREADA: str = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
       [PLAYLIST CREADA EXITOSAMENTE]
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+
+USUARIO_NO_PERMITIDO: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+
+         [ERROR CON LOS PERMISOS]
+                                          ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+      Su cuenta de Spotify no cuenta  
+         con el permiso para usar         COMUNICATE CON LOS DESARROLLADORES    
+             esta aplicacion.             
+                                          ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+"""
+
+
+ERROR_DESCONOCIDO: str = """
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+
+          [ERROR: DESCONOCIDO]       
+
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+- Comunicate con los desarrolladores.
+- Mandales una foto del problema que aparece abajo.
+"""
+
+
+SIN_DATOS: str = """
+⣿⣿⣿⣿⣿⣿⡿⣟⠻⠯⠭⠉⠛⠋⠉⠉⠛⠻⢿⣿⣿⣿⣿⣿⣿
+⣿⣿⣿⣿⡽⠚⠉⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⠀⠈⠙⢿⣿⣿⣿
+⣿⣿⠏⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⣿⣿⣷⣦⡀⠶⣿⣿⣿    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⡆⢻⣿⣿              [FALTAN DATOS]                
+⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣤⣻⣿⣯⣤⣹⣿        Sin los datos de su perfil    
+⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣿⡇⠀⣿⢟⣿⡀⠟⢹⣿          no podemos ejecutar el       
+⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣷⣤⣤⣼⣿⣿⡄⢹⣿                 software              
+⣷⠀⠀⠀⠶⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⣿⠛⠉⠈⢻       Intentelo de nuevo mas tarde   
+⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠋⠛⠛⠛⠀⠀⣤⣾    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+⣿⣿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠉⠛⠁⣰⣿⣿
+⣿⣿⣿⣿⣿⣷⣦⣤⣤⣤⣤⣄⣀⣀⣀⣀⣀⣠⣤⣤⣤⣾⣿⣿⣿
 """

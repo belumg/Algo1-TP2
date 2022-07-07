@@ -3,6 +3,7 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from webbrowser import open as web_open
+from httpx import ConnectError as sin_internet
 import tekore as tk
 import os
 import json
@@ -16,20 +17,20 @@ SCOPE: tk.Scope = tk.scope.every
 ####################################################################################################
 ####################################################################################################
 
-def input_num_con_control(min:int, max:int) -> int:
+def input_num_con_control(min: int, max: int) -> int:
     """Devuelve un entero que esta entre los numeros recibidos por parametro."""
-    seleccion: str = input("      >>>    ")
+    seleccion: str = input("      >>>    ").strip()
     while not seleccion.isnumeric() or int(seleccion) > max or int(seleccion) < min:
-        seleccion: str = input("Inválido. Vuelva a ingresar >>>  ")
+        seleccion: str = input("Inválido. Vuelva a ingresar >>>  ").strip()
     return int(seleccion)
 
 
 def input_con_control(palabras_permitidas: list, mensaje: str) -> str:
     """Devuelve un string que se encuentra entre las palabras permitidas."""
     print(mensaje)
-    seleccion: str = input("      >>>    ").lower()
+    seleccion: str = input("      >>>    ").lower().strip()
     while seleccion not in palabras_permitidas:
-        seleccion: str = input("Inválido. Vuelva a ingresar >>>  ").lower()
+        seleccion: str = input("Inválido. Vuelva a ingresar >>>  ").lower().strip()
     return seleccion
 
 ####################################################################################################
@@ -50,15 +51,18 @@ def probando(funcion_a_probar, datos_que_necesita: list = []) -> list:
             else:
                 dato_buscado = funcion_a_probar()
         except tk.Forbidden:
-            print("[ERROR] --> A tu cuenta de Spotify no le dieron permisos para acceder a esta aplicacion.")
-            print(" Hablalo con el desarrollador")
+            print(vis.USUARIO_NO_PERMITIDO)
             terminar: bool = True
-        except:
+        except sin_internet:
             print(vis.NO_INTERNET)
             print(" Necesitamos internet para acceder a los datos de su perfil.")
             intentar: str = input_con_control(["si", "no"], "Desea intentarlo de nuevo(si/no)?  ")
             if intentar == "no":
                 terminar: bool = True
+        except Exception as error_nunca_antes_visto:
+            print(vis.ERROR_DESCONOCIDO)
+            print("     [ERROR] --> ", error_nunca_antes_visto, "\n")
+            terminar: bool = True
         else:
             dato.append(dato_buscado)
             terminar: bool = True
@@ -206,7 +210,7 @@ def elegir_perfil(perfil: dict) -> str:
     nombres_perfiles.append("NO ELEGIR PERFIL")
     if not len(nombres_perfiles) == 1:
         vis.visual_lista_elementos(nombres_perfiles, "Perfiles Guardados", True)
-        opcion: int = input_num_con_control(1,len(nombres_perfiles))
+        opcion: int = input_num_con_control(1, len(nombres_perfiles))
         if (opcion == len(nombres_perfiles) or
             (perfil["username"] and
             perfil["username"] == nombres_perfiles[opcion-1])):
@@ -230,7 +234,7 @@ def manejo_perfiles(perfil: dict) -> None:
     terminar: bool = False
     while not terminar:
         vis.menu_perfiles(perfil["username"])
-        opcion: int = input_num_con_control(1,3)
+        opcion: int = input_num_con_control(1, 3)
         if opcion == 1:
             perfil_elegido: str = elegir_perfil(perfil)
             if perfil_elegido:
@@ -293,23 +297,19 @@ def datos_playlists_SP(spotify, id_usuario):
     Pre: Recibe un objeto spotify (ya con los datos de nuestro perfil elegido) y el id de Spotify del perfil actual.
     Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
     """
-    datos = []
-    datos_playlists = probando(spotify.playlists, [id_usuario])  # Que pasa si el usuario no tiene playlists?
-    if not datos_playlists:
-        return datos
-    for playlist in datos_playlists[0].items:
-        datos_playlist: dict = {}
-        datos_playlist["name"] = playlist.name
-        datos_playlist["id"] = playlist.id
-        datos_playlist["collaborative"] = playlist.collaborative
-        datos_playlist["description"] = playlist.description
-        """
-        canciones = []
-        for cancion in spotify.playlist_items(playlist.id).items:
-            canciones.append(cancion.track.name)
-        diccionario["tracks"] = canciones
-        """
-        datos.append(datos_playlist)
+    datos: list = []
+    datos_playlists: list = probando(spotify.playlists, [id_usuario])  # Que pasa si el usuario no tiene playlists?
+    if datos_playlists:
+        print("Consiguiendo los datos...")
+        todos_los_datos: list = probando(spotify.all_items, [datos_playlists[0]])
+        if todos_los_datos:
+            for playlist in todos_los_datos[0]:
+                datos_playlist: dict = {}
+                datos_playlist["name"] = playlist.name
+                datos_playlist["id"] = playlist.id
+                datos_playlist["collaborative"] = playlist.collaborative
+                datos_playlist["description"] = playlist.description
+                datos.append(datos_playlist)
     return datos
 
 ######################### AGREGARLE DATOS AL PERFIL ################################################
