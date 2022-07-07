@@ -93,6 +93,7 @@ se realicen cambios en otros dispositivos.
 * Al intentar trabajar con playlists VACIAS, se emitirá un mensaje y no podrá procederse con la tarea.
 * Mejoradas las excepciones, sobretodo para cuando no hay conexión a internet.
 * Mejorado el funcionamiento de wordcloud.
+* Spotify lista todas las playlists disponibles
 
 
 ### Bugs (30/06/2022)
