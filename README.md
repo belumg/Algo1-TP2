@@ -82,7 +82,7 @@ Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodid
 
 -Aparecerá un cartel con la validación de su autenticación.
 
-##Updates (07/07/2022)
+### Updates (07/07/2022)
 * Credenciales_Genius, credenciales_SP, credenciales_YT unificados en Credenciales.json
 * Eliminados los multiple return 
 * Las playlists no están alojadas en el diccionario usuario_actual.
@@ -94,11 +94,3 @@ se realicen cambios en otros dispositivos.
 * Mejoradas las excepciones, sobretodo para cuando no hay conexión a internet.
 * Mejorado el funcionamiento de wordcloud.
 * Spotify lista todas las playlists disponibles
-
-
-### Bugs (30/06/2022)
-* Varias aplicaciones al requerir el uso de playlists de Youtube y de Spotify poseen un error al llamar a una lista ya creada pero de contenido nulo. Para evitar que el código “rompa” se procedió a ingresar un Try/Except.
-* Se genera un error (aleatorio, solo con una cuenta de todas las que se usaron de prueba) al pedir los datos del usuario actual, según la documentación del tekore “el servidor entendió la solicitud, pero se niega a cumplirla.” 
-* Si se crea una playlist en el transcurso del programa, el diccionario que contiene la información no lo recibe por lo que no aparece en las opciones. 
-* El wordcloud no da buenos resultados para otro idioma que no sea en ingles, esto es debido a la implementación de json por la longitud de las listas. Se pensó en dos soluciones, utilizar una librería de wordcloud o realizar el conteo de cantidad de repeticiones de la letra a mano para solo mandarle las repetidas con la cantidad de veces que se repitio en un texto más pequeño.
-* Sólo imprime 20 listas de spotify, si el usuario posee más no se podrán ver en pantalla.
