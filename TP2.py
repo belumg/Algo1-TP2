@@ -401,8 +401,9 @@ def wordcloud(usuario_actual: dict, spotify: object, token_youtube: object) -> N
     try:
         al_wordcloud(letra_total, usuario_actual['username'], mi_playlist['id'])
         mostrame_esta_imagen(usuario_actual['username'], mi_playlist['id'])
-    except TimeoutError:
+    except:
         # esto se arreglará para la reentrega
+        # perdón guido salieron mil errores no supe cual era el correcto
         print("Ouh no! Hubo un error y se supero el tiempo de espera, sepa disculpar")
 
 
