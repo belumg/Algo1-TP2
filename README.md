@@ -82,7 +82,7 @@ Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodid
 
 -Aparecerá un cartel con la validación de su autenticación.
 
-## Updates (07/07/2022)
+## Updates (07/07/2022):
 * Credenciales_Genius, credenciales_SP, credenciales_YT unificados en Credenciales.json
 * Eliminados los multiple return 
 * Las playlists no están alojadas en el diccionario usuario_actual.
