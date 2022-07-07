@@ -95,7 +95,7 @@ def autenticar_spotify() -> str:
 ######################### AUTENTICAR YOUTUBE #######################################################
 ####################################################################################################
 
-def autenticarYT() -> object:  # ERROR: Puede devolver un string o un objeto.
+def autenticarYT() -> object:
     """ Autentica a un determinado usuario en la plataforma Youtube """
     permisos = ""
     scopes = ["https://www.googleapis.com/auth/youtube"]
@@ -298,7 +298,7 @@ def datos_playlists_SP(spotify, id_usuario):
     Post: Devuelve una lista con un monton de datos de las playlists que tiene el perfil actual.
     """
     datos: list = []
-    datos_playlists: list = probando(spotify.playlists, [id_usuario])  # Que pasa si el usuario no tiene playlists?
+    datos_playlists: list = probando(spotify.playlists, [id_usuario])
     if datos_playlists:
         print("Consiguiendo los datos...")
         todos_los_datos: list = probando(spotify.all_items, [datos_playlists[0]])
@@ -333,7 +333,7 @@ def datos_necesarios_perfil(perfil: dict) -> None:
             perfil["id_usuario_spotify"] = id_usuario[0].id 
         # Youtube:
         print("Consiguiendo datos de Youtube...")
-        youtube = validar_permisosYT(perfil["username"])    # Falta typing
+        youtube = validar_permisosYT(perfil["username"])
         perfil["youtube"] = youtube
         if "youtube" in perfil:
             request = youtube.channels().list(
