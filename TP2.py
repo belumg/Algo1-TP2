@@ -541,7 +541,7 @@ def print_playlists_de_user(usuario_actual:dict, servidor:str) -> None:
     else:
         for lista_reproduccion in playlists:
             lista_nombres.append(lista_reproduccion["name"])
-        vis.visual_lista_elementos(lista_nombres, f"Playlists de {servidor}", True)
+    vis.visual_lista_elementos(lista_nombres, f"Playlists de {servidor}", True)
 
 
 
@@ -609,7 +609,9 @@ def seleccionar_playlist(usuario_actual:dict, mi_playlist:dict, servidor:str, pe
         """ if (seleccion>len(playlists)):
             print("Número de playlist ingresado inválido.") """
         if (len(playlists) == 0):
-            print("No hay playlists guardadas en esta plataforma")
+            vis.visual_lista_elementos(
+                ["No hay ninguna lista para mostrar"], f"Playlists de {servidor}", True
+                )
         else:
             seleccion: int = input_num_con_control(1, len(playlists))
             permitido = comprobar_permisos(usuario_actual, servidor, seleccion)
