@@ -3,6 +3,7 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from webbrowser import open as web_open
+from httpx import ConnectError as sin_internet
 import tekore as tk
 import os
 import json
@@ -50,15 +51,18 @@ def probando(funcion_a_probar, datos_que_necesita: list = []) -> list:
             else:
                 dato_buscado = funcion_a_probar()
         except tk.Forbidden:
-            print("[ERROR] --> A tu cuenta de Spotify no le dieron permisos para acceder a esta aplicacion.")
-            print(" Hablalo con el desarrollador")
+            print(vis.USUARIO_NO_PERMITIDO)
             terminar: bool = True
-        except:
+        except sin_internet:
             print(vis.NO_INTERNET)
             print(" Necesitamos internet para acceder a los datos de su perfil.")
             intentar: str = input_con_control(["si", "no"], "Desea intentarlo de nuevo(si/no)?  ")
             if intentar == "no":
                 terminar: bool = True
+        except Exception as error_nunca_antes_visto:
+            print(vis.ERROR_DESCONOCIDO)
+            print("     [ERROR] --> ", error_nunca_antes_visto, "\n")
+            terminar: bool = True
         else:
             dato.append(dato_buscado)
             terminar: bool = True
