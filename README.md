@@ -1,4 +1,4 @@
-# Trabajo Práctico Nº 2. (Versión 0.1.3006.)
+# Trabajo Práctico Nº 2. (Versión 0.2)
 En el programa realizado se trabajó con las APIs de Youtube y Spotify. Se pidió un programa que pudiera realizar varias funciones sobre dichas aplicaciones, trabajando sobre los datos, cambiando y añadiendo información que se verá reflejada tanto en Spotify como en Youtube.
 
 
@@ -82,10 +82,20 @@ Se pide pocas veces el ingreso de datos que no sean numericos para mayor comodid
 
 -Aparecerá un cartel con la validación de su autenticación.
 
+##Updates (07/07/2022)
+* Credenciales_Genius, credenciales_SP, credenciales_YT unificados en Credenciales.json
+* Eliminados los multiple return 
+* Las playlists no están alojadas en el diccionario usuario_actual.
+Se obtienen cada vez que se necesiten mostrar. De esta manera, 
+la lista de playlists disponibles siempre estará actualizada aunque 
+se realicen cambios en otros dispositivos.
+* LISTAR PLAYLISTS contempla los casos donde no existen playlists en ese servidor
+* Al intentar trabajar con playlists VACIAS, se emitirá un mensaje y no podrá procederse con la tarea.
+* Mejoradas las excepciones, sobretodo para cuando no hay conexión a internet.
+* Mejorado el funcionamiento de wordcloud.
 
-## Bugs.
 
-Los problemas están proyectados arreglarse en la versión 1.0.0
+### Bugs (30/06/2022)
 * Varias aplicaciones al requerir el uso de playlists de Youtube y de Spotify poseen un error al llamar a una lista ya creada pero de contenido nulo. Para evitar que el código “rompa” se procedió a ingresar un Try/Except.
 * Se genera un error (aleatorio, solo con una cuenta de todas las que se usaron de prueba) al pedir los datos del usuario actual, según la documentación del tekore “el servidor entendió la solicitud, pero se niega a cumplirla.” 
 * Si se crea una playlist en el transcurso del programa, el diccionario que contiene la información no lo recibe por lo que no aparece en las opciones. 
